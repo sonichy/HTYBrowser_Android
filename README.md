@@ -1,4 +1,4 @@
 # Android：海天鹰浏览器
-基本电量信息，数据列表，电量电流电压折线图。
+基于 Android WebView 组件的浏览器，支持收藏夹、图片广告过滤。
 ### 主界面
 ![alt](preview.png)  
