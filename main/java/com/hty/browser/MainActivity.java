@@ -63,7 +63,6 @@ import android.webkit.WebView;
 import android.webkit.WebView.FindListener;
 import android.webkit.WebView.HitTestResult;
 import android.webkit.WebViewClient;
-import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.FrameLayout;
@@ -96,7 +95,7 @@ public class MainActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-
+        IMM = (InputMethodManager) getApplicationContext().getSystemService(Context.INPUT_METHOD_SERVICE);
 		String path = Environment.getExternalStorageDirectory().getPath() + File.separator + "HTYBrowser";
 		dir = new File(path);
 		if (!dir.exists()) {
@@ -106,7 +105,7 @@ public class MainActivity extends Activity {
 		//ptitle = "百度";
 		//urln = "http//www.baidu.com";
 		getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
-		IMM = (InputMethodManager) getApplicationContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+
 		LinearLayout1 = (LinearLayout) findViewById(R.id.LinearLayout1);
 		LinearLayout2 = (LinearLayout) findViewById(R.id.LinearLayout2);
 		// RelativeLayout1 = (RelativeLayout)
@@ -194,14 +193,15 @@ public class MainActivity extends Activity {
 				editText1.setText(url);
 				urln = url;
 				btnBack.setEnabled(true);
+                IMM.hideSoftInputFromWindow(editText1.getWindowToken(), 0);
 			}
 
 			@Override
 			public void onPageFinished(WebView view, String url) {
 				super.onPageFinished(view, url);
 				String js = "";
-				// link2img，宽度适应浏览器
-				js = "javascript:var obj=document.getElementsByTagName('a');var aimg=new Array();var dw=document.documentElement.clientWidth-10;var dh=document.documentElement.clientHeight;for(var i=0;i<obj.length;i++){if(obj[i].innerText.indexOf('查看图片')!=-1){var img=new Image();img.src=obj[i].href;aimg[i]=img;obj[i].textContent='';obj[i].appendChild(img);(function(i){aimg[i].onload=function(){var iw=this.offsetWidth;var ih=this.offsetHeight;var bl=0;if(iw>dw){var text='';bl=(dw/iw).toFixed(2);this.style.width=dw+'px';this.style.height=dw*ih/iw+'px';text=' '+i+': W:'+dw+'/'+iw+'='+bl;this.style.border='1px solid blue';var span=document.createElement('span');span.textContent=text;span.setAttribute('style','white-space:nowrap;');this.parentNode.appendChild(span);}}})(i);}}";
+				// 关键字链接高亮
+				js = "javascript:var a=document.getElementsByTagName('a');for(var i=0;i<a.length;i++){if(a[i].textContent.indexOf('国产')!=-1){a[i].style.color='white';a[i].style.backgroundColor='#DA3434';}}";
 				view.loadUrl(js);
 			}
 
@@ -288,12 +288,12 @@ public class MainActivity extends Activity {
 				if(sharedPreferences.getBoolean("switch_adBlock",true)){
 					ADBlock();
 				}
-				if(sharedPreferences.getBoolean("switch_iframeBlock",false)) {
-					//Log.e("line292", "progress:" + newProgress);
-					//if (!webView1.getUrl().contains("baidu.com")){
-						iframeBlock();
-					//}
-				}
+                if(sharedPreferences.getBoolean("switch_iframeBlock",false)) {
+                    //Log.e("line292", "progress:" + newProgress);
+                    if (!view.getUrl().contains("baidu.com")){
+                        iframeBlock();
+                    }
+                }
 			}
 
 			// 获取网页标题

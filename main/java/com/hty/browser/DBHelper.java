@@ -53,14 +53,14 @@ public class DBHelper extends SQLiteOpenHelper {
 		db.close();
 	}
 
-	public Cursor query(String url) {
+	public Cursor query(String s) {
 		db = getWritableDatabase();
 		Cursor c = null;
-		if (url.equalsIgnoreCase("")) {
+		if (s.equals("")) {
 			c = db.query(TableName, null, null, null, null, null, "_id desc");
 		} else {
-			c = db.query(TableName, null, "website=?", new String[] { url }, null, null, "_id desc");
-		}
+            c = db.query(TableName, null, "website LIKE '%" + s + "%' or title LIKE '%" + s + "%'", null, null, null, "_id desc");
+        }
 		return c;
 	}
 
