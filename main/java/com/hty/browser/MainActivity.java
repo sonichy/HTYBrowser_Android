@@ -1,5 +1,6 @@
 package com.hty.browser;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -7,6 +8,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
@@ -16,6 +18,7 @@ import java.util.List;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.DownloadManager;
+import android.content.BroadcastReceiver;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.ContentResolver;
@@ -23,8 +26,10 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -35,6 +40,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.text.Editable;
@@ -85,11 +91,14 @@ public class MainActivity extends Activity {
 	InputMethodManager IMM;
 	ProgressBar pgb1;
 	String urlo = "", HTRE = "", ptitle = "", urln = "";
-	int ec = 0;
+	String urlVersion = "https://raw.githubusercontent.com/sonichy/Android_HTYBrowser/master/version";
+	String urlUpdate = "https://raw.githubusercontent.com/sonichy/Android_HTYBrowser/master/app-debug.apk";
 	CustomViewCallback customViewCallback;
-	boolean isFullScreen;
+	boolean isFullScreen, isManualCheckUpdate = false;
 	static File dir;
 	SharedPreferences sharedPreferences;
+    Thread CU;
+    long downloadIdUpdate;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -208,8 +217,7 @@ public class MainActivity extends Activity {
 			@Override
 			public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
 				super.onReceivedError(view, errorCode, description, failingUrl);
-				Toast.makeText(getApplicationContext(), "ReceivedError:" + errorCode, Toast.LENGTH_SHORT)
-						.show();
+				Toast.makeText(getApplicationContext(), "ReceivedError:" + errorCode, Toast.LENGTH_SHORT).show();
 				if (isNetworkConnected()) {
                     switch(errorCode){
                         case WebViewClient.ERROR_HOST_LOOKUP:   // 找不到主机，跳转百度搜索
@@ -409,6 +417,18 @@ public class MainActivity extends Activity {
 		});
 
 
+        CU = new Thread() {
+            @Override
+            public void run() {
+                checkUpdate();
+            }
+        };
+        new Thread(CU).start();
+
+        DownloadCompleteReceiver receiver = new DownloadCompleteReceiver();
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
+        registerReceiver(receiver, intentFilter);
 	}
 
 	private void setFullScreen() {
@@ -747,7 +767,7 @@ public class MainActivity extends Activity {
 	}
 
 	void MenuDialog() {
-		final String items[] = { "收藏本页", "收藏夹", "查找", "分享", "视频独立播放", "查看源码", "主页", "全屏", "广告过滤规则", "设置", "关于", "退出" };
+		String[] items = { "收藏本页", "收藏夹", "查找", "分享", "视频独立播放", "查看源码", "主页", "全屏", "广告过滤规则", "设置", "检查更新", "关于", "退出" };
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
 		builder.setTitle("菜单");
 		builder.setIcon(R.drawable.ic_launcher);
@@ -810,9 +830,13 @@ public class MainActivity extends Activity {
 						startActivity(new Intent(MainActivity.this, SettingsActivity.class));
 						break;
 					case 10:
+                        isManualCheckUpdate = true;
+                        new Thread(CU).start();
+					    break;
+                    case 11:
 						webView1.loadUrl("file:///android_asset/about.htm");
 						break;
-					case 11:
+					case 12:
 						MainActivity.this.finish();
 						break;
 				}
@@ -1022,10 +1046,85 @@ public class MainActivity extends Activity {
 		// 自定义下载路径
 		// request.setDestinationUri()
 		// request.setDestinationInExternalFilesDir()
-		final DownloadManager downloadManager = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+		DownloadManager downloadManager = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
 		// 添加一个下载任务
 		long downloadId = downloadManager.enqueue(request);
-		Log.e("downloadId:", downloadId+"");
+        Log.e("downloadId:", downloadId+"");
+		if(url == urlUpdate){
+		    downloadIdUpdate = downloadId;
+		}
 	}
+
+    void checkUpdate() {
+        try {
+            String versionL = MainActivity.this.getPackageManager().getPackageInfo(MainActivity.this.getPackageName(), 0).versionName;
+            URL url = new URL(urlVersion);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            //conn.setRequestMethod("GET");
+            //if (conn.getResponseCode() == 200) {
+            InputStream IS = conn.getInputStream();
+            InputStreamReader ISR = new InputStreamReader(IS);
+            BufferedReader bufferReader = new BufferedReader(ISR);
+            String versionS = bufferReader.readLine();
+            Log.e("Version", versionS + " > " + versionL + " ?");
+            String[] AVersionS = versionS.split("\\.");
+            String[] AVersionL = versionL.split("\\.");
+            //Log.e("Version: ", AVersionS[0] + " > " + AVersionL[0] + " ? " + AVersionS[1] + " > " + AVersionL[1] + " ?");
+            if ((Integer.parseInt(AVersionS[0]) > Integer.parseInt(AVersionL[0])) || (Integer.parseInt(AVersionS[1]) > Integer.parseInt(AVersionL[1]))) {
+                Looper.prepare();
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                builder.setIcon(R.drawable.ic_launcher);
+                builder.setTitle("升级");
+                builder.setMessage("发现新版本 " + versionS + " ，当前版本 " + versionL + " ，是否升级？");
+                builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        downloadBySystem(urlUpdate, "", "");
+                    }
+                });
+                builder.setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                    }
+                });
+                AlertDialog dialog = builder.create();
+                dialog.show();
+                Looper.myLooper().loop();
+            } else {
+                if(isManualCheckUpdate) {
+                    Looper.prepare();
+                    Toast.makeText(getApplicationContext(), "当前版本 " + versionL + " 是最新的版本", Toast.LENGTH_SHORT).show();
+                    Looper.myLooper().loop();
+                }
+                Log.e("检查更新: ", "当前版本是最新的版本");
+            }
+            //}
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private class DownloadCompleteReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Log.e("onReceive.intent", intent != null ? intent.toUri(0) : null);
+            if (intent != null) {
+                if (DownloadManager.ACTION_DOWNLOAD_COMPLETE.equals(intent.getAction())) {
+                    long downloadId = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1);
+                    Log.e("DownloadId", downloadId + "");
+                    DownloadManager downloadManager = (DownloadManager) context.getSystemService(DOWNLOAD_SERVICE);
+                    if(downloadId ==downloadIdUpdate){
+                        Uri uri = downloadManager.getUriForDownloadedFile(downloadId);
+                        Log.e("UriDownload", uri.toString());
+                        Intent intentn = new Intent(Intent.ACTION_VIEW);
+                        intentn.setDataAndType(uri, "application/vnd.android.package-archive");
+                        startActivity(intentn);
+                    }
+                }
+            }
+        }
+    }
 
 }
