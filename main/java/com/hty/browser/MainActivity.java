@@ -59,6 +59,7 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.webkit.ConsoleMessage;
 import android.webkit.DownloadListener;
+import android.webkit.GeolocationPermissions;
 import android.webkit.JsResult;
 import android.webkit.URLUtil;
 import android.webkit.ValueCallback;
@@ -92,7 +93,7 @@ public class MainActivity extends Activity {
 	ProgressBar pgb1;
 	String urlo = "", HTRE = "", ptitle = "", urln = "";
 	String urlVersion = "https://raw.githubusercontent.com/sonichy/Android_HTYBrowser/master/version";
-	String urlUpdate = "https://raw.githubusercontent.com/sonichy/Android_HTYBrowser/master/app-debug.apk";
+	String urlUpdate = "https://raw.githubusercontent.com/sonichy/Android_HTYBrowser/master/app.apk";
 	CustomViewCallback customViewCallback;
 	boolean isFullScreen, isManualCheckUpdate = false;
 	static File dir;
@@ -315,7 +316,7 @@ public class MainActivity extends Activity {
 			@Override
 			public void onShowCustomView(View view, CustomViewCallback callback) {
 				Log.e("onShowCustomView", "onShowCustomView");
-				Toast.makeText(getApplicationContext(), "onShowCustomView", Toast.LENGTH_SHORT).show();
+				//Toast.makeText(getApplicationContext(), "onShowCustomView", Toast.LENGTH_SHORT).show();
 				customViewCallback = callback;
 				// 将video放到当前视图中
 				video.addView(view);
@@ -328,7 +329,7 @@ public class MainActivity extends Activity {
 			@Override
 			public void onHideCustomView() {
 				Log.e("onHideCustomView", "onHideCustomView");
-				Toast.makeText(getApplicationContext(), "onHideCustomView", Toast.LENGTH_SHORT).show();
+				//Toast.makeText(getApplicationContext(), "onHideCustomView", Toast.LENGTH_SHORT).show();
 				getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 				// 退出全屏
 				// quitFullScreen();
@@ -340,6 +341,14 @@ public class MainActivity extends Activity {
 						+ consoleMessage.lineNumber());
 				return super.onConsoleMessage(consoleMessage);
 			}
+
+            // 定位权限
+            @Override
+            public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
+                callback.invoke(origin, true, false);
+                super.onGeolocationPermissionsShowPrompt(origin, callback);
+            }
+
 		});
 
 		webView1.setDownloadListener(new MyWebViewDownLoadListener());
@@ -1115,7 +1124,7 @@ public class MainActivity extends Activity {
                     long downloadId = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1);
                     Log.e("DownloadId", downloadId + "");
                     DownloadManager downloadManager = (DownloadManager) context.getSystemService(DOWNLOAD_SERVICE);
-                    if(downloadId ==downloadIdUpdate){
+                    if(downloadId == downloadIdUpdate){
                         Uri uri = downloadManager.getUriForDownloadedFile(downloadId);
                         Log.e("UriDownload", uri.toString());
                         Intent intentn = new Intent(Intent.ACTION_VIEW);
