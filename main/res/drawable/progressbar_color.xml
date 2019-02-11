@@ -7,7 +7,7 @@
             <solid android:color="#CBCED6" />
         </shape>
     </item>
-    <!-- 第二条进度条颜色 -->
+    <!-- 第二条进度条 -->
     <item android:id="@android:id/secondaryProgress">
         <clip>
             <shape>               

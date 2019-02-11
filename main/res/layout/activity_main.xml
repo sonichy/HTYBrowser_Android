@@ -46,11 +46,13 @@
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:background="@null"
                 android:hint="输入网址"
                 android:imeOptions="actionGo"
                 android:inputType="textUri"
+                android:padding="2dp"
                 android:singleLine="true"
-                />
+                android:textSize="20sp"/>
 
             <ImageButton
                 android:id="@+id/ImageButtonGo"
@@ -67,18 +69,26 @@
                 android:src="@android:drawable/ic_menu_sort_by_size"/>
 
         </LinearLayout>
-   		
-        <ProgressBar
-            android:id="@+id/progressBar1" style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="fill_parent"
-            android:layout_height="1dp"
-            android:progressDrawable="@drawable/progressbar_color"
-            android:visibility="invisible" />
 
-        <WebView
-            android:id="@+id/WebView1"
+        <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="match_parent">
+
+            <WebView
+                android:id="@+id/WebView1"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"/>
+
+            <ProgressBar
+                android:id="@+id/progressBar1"
+                style="@android:style/Widget.Holo.ProgressBar.Horizontal"
+                android:layout_width="fill_parent"
+                android:layout_height="1dp"
+                android:layout_alignTop="@+id/WebView1"
+                android:progressDrawable="@drawable/progressbar_color"/>
+
+        </RelativeLayout>
+
     </LinearLayout>
 
     <ImageView
@@ -108,10 +118,13 @@
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:background="@null"
                 android:hint="查找"
                 android:imeOptions="actionSearch"
                 android:inputType="textUri"
-                android:singleLine="true"/>
+                android:padding="2dp"
+                android:singleLine="true"
+                android:textSize="20sp"/>
 
             <TextView
                 android:id="@+id/findCount"

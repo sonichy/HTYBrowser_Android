@@ -12,7 +12,7 @@ public class DBHelper extends SQLiteOpenHelper {
 
 	public static final String DATABASE_NAME = MainActivity.dir + File.separator + "webfav.db";
 	private final static int VERSION = 1;
-	String TableName = "webfav";
+	static String TableName = "webfav";
 	private SQLiteDatabase db;
 	private static DBHelper mInstance = null;
 
@@ -39,10 +39,6 @@ public class DBHelper extends SQLiteOpenHelper {
 		// onCreate(db);
 		switch (newVersion) {
 		case 6:
-			db.execSQL("alter table battery rename to battery_temp");
-			db.execSQL("CREATE TABLE battery (_id INTEGER PRIMARY KEY ,time TEXT,level INTEGER, voltage INTEGER, current INTEGER , temperature INTEGER, cpu INTEGER)");
-			db.execSQL("insert into battery select *,'' from battery_temp");
-			db.execSQL("drop table battery_temp");
 			break;
 		}
 	}
