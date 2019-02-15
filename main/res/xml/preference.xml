@@ -1,21 +1,53 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
                   android:title="设置">
 
-        <EditTextPreference
-            android:key="homepage"
-            android:defaultValue="http://www.baidu.com"
-            android:summary="http://www.baidu.com"
-            android:title="主页"
-            android:background="#282828"/>
+    <EditTextPreference
+        android:key="homepage"
+        android:defaultValue="http://www.baidu.com"
+        android:summary="http://www.baidu.com"
+        android:title="主页"
+        android:textColor="@android:color/holo_blue_dark"/>
+
+    <SwitchPreference
+        android:key="switch_adBlock"
+        android:defaultValue="true"
+        android:title="广告过滤"/>
+
+    <SwitchPreference
+        android:key="switch_iframeBlock"
+        android:defaultValue="false"
+        android:title="iframe过滤"/>
+
+    <PreferenceCategory
+        android:title="关键字过滤">
 
         <SwitchPreference
-            android:key="switch_adBlock"
-            android:defaultValue="true"
-            android:title="广告过滤"/>
-
-        <SwitchPreference
-            android:key="switch_iframeBlock"
+            android:key="switch_filter"
             android:defaultValue="false"
-            android:title="iframe过滤"/>
+            android:title="过滤开关"/>
+
+        <EditTextPreference
+            android:key="filter"
+            android:title="过滤文本"
+            android:summary="关键字之间用;间隔"
+            android:textColor="@android:color/holo_blue_dark"/>
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="关键字高亮">
+
+    <SwitchPreference
+        android:key="switch_highlight"
+        android:defaultValue="false"
+        android:title="高亮开关"/>
+
+    <EditTextPreference
+        android:key="highlight"
+        android:title="高亮文本"
+        android:summary="关键字之间用;间隔"
+        android:textColor="@android:color/holo_blue_dark"/>
+
+    </PreferenceCategory>
 
 </PreferenceScreen>

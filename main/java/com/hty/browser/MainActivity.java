@@ -226,10 +226,6 @@ public class MainActivity extends Activity {
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 pgb1.setVisibility(View.INVISIBLE);
-                String js = "";
-                // 链接关键字链接高亮、屏蔽
-                js = "javascript:var a=document.getElementsByTagName('a');for(var i=0;i<a.length;i++){if(a[i].textContent.indexOf('国产')!=-1){a[i].style.color='white';a[i].style.backgroundColor='#DA3434';}if(a[i].textContent.indexOf('习近平')!=-1 || a[i].textContent.indexOf('总书记')!=-1){a[i].textContent='';}}";
-                view.loadUrl(js);
             }
 
             @Override
@@ -280,22 +276,28 @@ public class MainActivity extends Activity {
             public void onProgressChanged(WebView view, int newProgress) {
                 super.onProgressChanged(view, newProgress);
                 pgb1.setProgress(newProgress);
-				/*
-				if(!isFullScreen) {
-					if (newProgress == 100) {
-						pgb1.setVisibility(View.INVISIBLE);
-					} else {
-						pgb1.setVisibility(View.VISIBLE);
-					}
-				}
-				*/
                 if(sharedPreferences.getBoolean("switch_adBlock",true)){
                     ADBlock();
                 }
                 if(sharedPreferences.getBoolean("switch_iframeBlock",false)) {
-                    //Log.e("line292", "progress:" + newProgress);
                     if (!view.getUrl().contains("baidu.com")){
                         iframeBlock();
+                    }
+                }
+                // 链接关键字屏蔽
+                if(sharedPreferences.getBoolean("switch_filter",false)){
+                    String sf = sharedPreferences.getString("filter","");
+                    if(!sf.equals("")) {
+                        String js = "javascript:var s='"+sf+"';var sl=s.split(';');var a=document.getElementsByTagName('a');for(var i=0;i<a.length;i++){for(var j=0;j<sl.length;j++){if(a[i].textContent.indexOf(sl[j])!=-1){a[i].textContent='';}}}";
+                        view.loadUrl(js);
+                    }
+                }
+                // 链接关键字高亮
+                if(sharedPreferences.getBoolean("switch_highlight",false)){
+                    String shl = sharedPreferences.getString("highlight","");
+                    if(!shl.equals("")) {
+                        String js = "javascript:var s='"+shl+"';var sl=s.split(';');var a=document.getElementsByTagName('a');for(var i=0;i<a.length;i++){for(var j=0;j<sl.length;j++){if(a[i].textContent.indexOf(sl[j])!=-1){a[i].style.color='white';a[i].style.backgroundColor='#DA3434';}}}";
+                        view.loadUrl(js);
                     }
                 }
             }
@@ -534,10 +536,9 @@ public class MainActivity extends Activity {
     private class MyWebViewDownLoadListener implements DownloadListener {
         @Override
         public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
-            //			Uri uri = Uri.parse(url);
-            //			Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-            //			startActivity(intent);
-            downloadBySystem(url,"","");
+            Log.e("Download", url);
+            //if(!url.contains("baidu.com"))
+            downloadBySystem(url, "", "");
         }
     }
 
@@ -727,7 +728,6 @@ public class MainActivity extends Activity {
 
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
-        // TODO Auto-generated method stub
         super.onConfigurationChanged(newConfig);
         // if (this.getResources().getConfiguration().orientation ==
         // Configuration.ORIENTATION_LANDSCAPE) {
@@ -813,7 +813,6 @@ public class MainActivity extends Activity {
                                         helper.insert(values);
                                     } else {
                                         Toast.makeText(getApplicationContext(), "网址已存在", Toast.LENGTH_SHORT).show();
-                                        IMM.hideSoftInputFromWindow(ET_title.getWindowToken(), 0);
                                     }
                                     try {
                                         //关闭
@@ -821,6 +820,7 @@ public class MainActivity extends Activity {
                                         dialog.dismiss();
                                     } catch (Exception ex) {
                                     }
+                                    IMM.hideSoftInputFromWindow(ET_title.getWindowToken(), 0);
                                 } else {
                                     if (stitle.equals("")){
                                         ET_title.setError("标题不能为空！");
