@@ -190,6 +190,8 @@ public class MainActivity extends Activity {
         webView1.getSettings().supportMultipleWindows();
         // 支持获取手势焦点
         webView1.requestFocusFromTouch();
+        // 允许跨域
+        webView1.getSettings().setAllowUniversalAccessFromFileURLs(true);
 
         webView1.setWebViewClient(new WebViewClient() {
             @Override
