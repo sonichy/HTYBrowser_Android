@@ -34,7 +34,8 @@ import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.graphics.Color;
+import android.graphics.Matrix;
+import android.graphics.drawable.BitmapDrawable;
 import android.media.MediaScannerConnection;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -67,6 +68,7 @@ import android.webkit.URLUtil;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebChromeClient.CustomViewCallback;
+import android.webkit.WebIconDatabase;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebView.FindListener;
@@ -85,7 +87,7 @@ import android.widget.Toast;
 public class MainActivity extends Activity {
     TextView findCount;
     EditText editText1, findText;
-    ImageButton btnGo, btnBack, btnForward, btnMenu, findPrev, findNext, findClose;
+    ImageButton btnGo, btnBack, btnForward, btnMenu, findPrev, findNext, findClose, imageButton_info;
     WebView webView1;
     // RelativeLayout RelativeLayout1;
     LinearLayout LinearLayout1, LinearLayout2;
@@ -151,6 +153,7 @@ public class MainActivity extends Activity {
         findPrev = (ImageButton) findViewById(R.id.findPrev);
         findNext = (ImageButton) findViewById(R.id.findNext);
         findClose = (ImageButton) findViewById(R.id.findClose);
+        imageButton_info = (ImageButton) findViewById(R.id.imageButton_info);
         // imageView1.setAlpha(100);
         btnGo.setOnClickListener(new ButtonListener());
         btnBack.setOnClickListener(new ButtonListener());
@@ -162,6 +165,7 @@ public class MainActivity extends Activity {
         findClose.setOnClickListener(new ButtonListener());
         editText1 = (EditText) findViewById(R.id.EditText1);
         webView1 = (WebView) findViewById(R.id.WebView1);
+        WebIconDatabase.getInstance().open(getDir("icons", MODE_PRIVATE).getPath());    //获取favicon图标路径
         registerForContextMenu(webView1);
         // 开启JS
         webView1.getSettings().setJavaScriptEnabled(true);
@@ -222,6 +226,7 @@ public class MainActivity extends Activity {
                 btnBack.setEnabled(true);
                 IMM.hideSoftInputFromWindow(editText1.getWindowToken(), 0);
                 pgb1.setVisibility(View.VISIBLE);
+                imageButton_info.setImageResource(android.R.drawable.ic_menu_info_details);
             }
 
             @Override
@@ -309,6 +314,14 @@ public class MainActivity extends Activity {
             public void onReceivedTitle(WebView view, String title) {
                 super.onReceivedTitle(view, title);
                 ptitle = title;
+            }
+
+            // 接收网站图标(favicon)
+            public void onReceivedIcon(WebView view, Bitmap icon) {
+                Matrix matrix = new Matrix();
+                matrix.postScale((float)60 / icon.getWidth(), (float)60 / icon.getHeight());
+                Bitmap bitmap = Bitmap.createBitmap(icon, 0, 0, icon.getWidth(), icon.getHeight(), matrix, true);
+                imageButton_info.setImageBitmap(bitmap);
             }
 
             // 播放网络视频时全屏会被调用的方法
@@ -789,7 +802,11 @@ public class MainActivity extends Activity {
                         ET_url.setText(urln);
                         layout.addView(ET_url);
                         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                        builder.setIcon(android.R.drawable.btn_star);
+                        Bitmap icon = webView1.getFavicon();
+                        Matrix matrix = new Matrix();
+                        matrix.postScale((float)100/icon.getWidth(), (float)100/icon.getHeight());
+                        Bitmap bitmap = Bitmap.createBitmap(icon, 0, 0, icon.getWidth(), icon.getHeight(), matrix, true);
+                        builder.setIcon(new BitmapDrawable(getResources(), bitmap));
                         builder.setTitle("添加收藏");
                         builder.setView(layout);
                         builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
@@ -813,6 +830,7 @@ public class MainActivity extends Activity {
                                         values.put("website", surl);
                                         values.put("title", stitle);
                                         helper.insert(values);
+                                        IMM.hideSoftInputFromWindow(ET_title.getWindowToken(), 0);
                                     } else {
                                         Toast.makeText(getApplicationContext(), "网址已存在", Toast.LENGTH_SHORT).show();
                                     }
@@ -822,7 +840,6 @@ public class MainActivity extends Activity {
                                         dialog.dismiss();
                                     } catch (Exception ex) {
                                     }
-                                    IMM.hideSoftInputFromWindow(ET_title.getWindowToken(), 0);
                                 } else {
                                     if (stitle.equals("")){
                                         ET_title.setError("标题不能为空！");
