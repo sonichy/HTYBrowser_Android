@@ -44,11 +44,10 @@
 
             <ImageButton
                 android:id="@+id/imageButton_info"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:adjustViewBounds="false"
+                android:layout_width="25dp"
+                android:layout_height="25dp"
                 android:background="@null"
-                android:scaleType="centerInside"
+                android:scaleType="fitCenter"
                 android:src="@android:drawable/ic_menu_info_details"/>
 
             <EditText

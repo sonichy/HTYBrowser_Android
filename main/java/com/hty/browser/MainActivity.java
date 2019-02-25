@@ -41,6 +41,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Looper;
@@ -165,7 +166,7 @@ public class MainActivity extends Activity {
         findClose.setOnClickListener(new ButtonListener());
         editText1 = (EditText) findViewById(R.id.EditText1);
         webView1 = (WebView) findViewById(R.id.WebView1);
-        WebIconDatabase.getInstance().open(getDir("icons", MODE_PRIVATE).getPath());    //获取favicon图标路径
+        WebIconDatabase.getInstance().open(getDir("icons", MODE_PRIVATE).getPath());    //获取图标数据库路径
         registerForContextMenu(webView1);
         // 开启JS
         webView1.getSettings().setJavaScriptEnabled(true);
@@ -196,13 +197,17 @@ public class MainActivity extends Activity {
         webView1.requestFocusFromTouch();
         // 允许跨域
         webView1.getSettings().setAllowUniversalAccessFromFileURLs(true);
+        // 允许调试
+        if(Build.VERSION.SDK_INT >= 19) {
+            webView1.setWebContentsDebuggingEnabled(true);
+        }
 
         webView1.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
                 Log.e("OverrideUrlLoading", url);
                 // 协议过滤
-                if(url.startsWith("http")){
+                if(url.startsWith("http") && !url.startsWith("https://cdn-haokanapk.baidu.com/")){
                     view.loadUrl(url);
                 }
 				/*
@@ -220,13 +225,16 @@ public class MainActivity extends Activity {
 
             @Override
             public void onPageStarted(WebView view, String url, Bitmap favicon) {
-                super.onPageStarted(view, url, favicon);
+                //super.onPageStarted(view, url, favicon);
                 editText1.setText(url);
                 urln = url;
                 btnBack.setEnabled(true);
                 IMM.hideSoftInputFromWindow(editText1.getWindowToken(), 0);
                 pgb1.setVisibility(View.VISIBLE);
                 imageButton_info.setImageResource(android.R.drawable.ic_menu_info_details);
+//                if(favicon != null) {
+//                    imageButton_info.setImageBitmap(favicon);
+//                }
             }
 
             @Override
@@ -318,10 +326,7 @@ public class MainActivity extends Activity {
 
             // 接收网站图标(favicon)
             public void onReceivedIcon(WebView view, Bitmap icon) {
-                Matrix matrix = new Matrix();
-                matrix.postScale((float)60 / icon.getWidth(), (float)60 / icon.getHeight());
-                Bitmap bitmap = Bitmap.createBitmap(icon, 0, 0, icon.getWidth(), icon.getHeight(), matrix, true);
-                imageButton_info.setImageBitmap(bitmap);
+                imageButton_info.setImageBitmap(icon);
             }
 
             // 播放网络视频时全屏会被调用的方法
@@ -552,7 +557,6 @@ public class MainActivity extends Activity {
         @Override
         public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
             Log.e("Download", url);
-            //if(!url.contains("baidu.com"))
             downloadBySystem(url, "", "");
         }
     }
@@ -563,16 +567,19 @@ public class MainActivity extends Activity {
         WebView w = (WebView) v;
         HitTestResult result = w.getHitTestResult();
         HTRE = result.getExtra();
+        menu.setHeaderIcon(android.R.drawable.ic_menu_report_image);
         menu.setHeaderTitle(HTRE);
         if (result.getType() == HitTestResult.IMAGE_TYPE || result.getType() == HitTestResult.SRC_IMAGE_ANCHOR_TYPE) {
+            menu.setHeaderIcon(android.R.drawable.ic_menu_gallery); // Context menu items do not support icons
             menu.add(0, 0, 0, "查看图片");
             menu.add(0, 1, 1, "复制图片");
-            menu.add(0, 2, 2, "保存图片");
+            menu.add(0, 2, 2, "保存图片").setIcon(android.R.drawable.ic_menu_save); // Context menu items do not support icons
             menu.add(0, 3, 3, "复制链接");
             menu.add(0, 4, 4, "屏蔽图片");
             menu.add(0, 5, 5, "隐藏图片");
         }
         if (result.getType() == HitTestResult.SRC_ANCHOR_TYPE) {
+            menu.setHeaderIcon(android.R.drawable.ic_menu_sort_alphabetically);
             menu.add(0, 2, 2, "下载");
             menu.add(0, 3, 3, "复制链接");
         }
@@ -806,7 +813,8 @@ public class MainActivity extends Activity {
                         Matrix matrix = new Matrix();
                         matrix.postScale((float)100/icon.getWidth(), (float)100/icon.getHeight());
                         Bitmap bitmap = Bitmap.createBitmap(icon, 0, 0, icon.getWidth(), icon.getHeight(), matrix, true);
-                        builder.setIcon(new BitmapDrawable(getResources(), bitmap));
+                        BitmapDrawable drawable = new BitmapDrawable(getResources(), bitmap);
+                        builder.setIcon(drawable);
                         builder.setTitle("添加收藏");
                         builder.setView(layout);
                         builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
@@ -822,7 +830,7 @@ public class MainActivity extends Activity {
                                 } catch (Exception ex) {
 
                                 }
-                                if (!stitle.equals("") && surl.startsWith("http")) {
+                                if (!stitle.equals("") && (surl.startsWith("http") || surl.startsWith("file:///"))) {
                                     DBHelper helper = new DBHelper(getApplicationContext());
                                     Cursor c = helper.query(surl);
                                     if (c.getCount() == 0) {
@@ -844,7 +852,7 @@ public class MainActivity extends Activity {
                                     if (stitle.equals("")){
                                         ET_title.setError("标题不能为空！");
                                     }
-                                    if (!surl.startsWith("http")){
+                                    if (!surl.startsWith("http") || !surl.startsWith("file:///")){
                                         ET_url.setError("网址错误！");
                                     }
                                     try {
@@ -1106,9 +1114,9 @@ public class MainActivity extends Activity {
     }
 
     // 调用系统下载，https://www.jianshu.com/p/6e38e1ef203a
-    private void downloadBySystem(String url, String contentDisposition, String mimeType) {
+    private void downloadBySystem(String surl, String contentDisposition, String mimeType) {
         // 指定下载地址
-        DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
+        DownloadManager.Request request = new DownloadManager.Request(Uri.parse(surl));
         // 允许媒体扫描，根据下载的文件类型被加入相册、音乐等媒体库
         request.allowScanningByMediaScanner();
         // 设置通知的显示类型，下载进行时和完成后显示通知
@@ -1116,27 +1124,27 @@ public class MainActivity extends Activity {
         // 设置通知栏的标题，如果不设置，默认使用文件名
         // request.setTitle("This is title");
         // 设置通知栏的描述
-        // request.setDescription("This is description");
+         request.setDescription(surl);
         // 允许在计费流量下下载
         request.setAllowedOverMetered(false);
         // 允许该记录在下载管理界面可见
-        request.setVisibleInDownloadsUi(true);
+        //request.setVisibleInDownloadsUi(true);
         // 允许漫游时下载
         request.setAllowedOverRoaming(true);
         // 允许下载的网路类型
         request.setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI);
         // 设置下载文件保存的路径和文件名
-        String fileName  = URLUtil.guessFileName(url, contentDisposition, mimeType);
+        String fileName  = URLUtil.guessFileName(surl, contentDisposition, mimeType);
         Log.e("fileName:", fileName);
         request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName);
         // 自定义下载路径
-        // request.setDestinationUri()
-        // request.setDestinationInExternalFilesDir()
+        //request.setDestinationUri();
+        //request.setDestinationInExternalFilesDir();
         DownloadManager downloadManager = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
         // 添加一个下载任务
         long downloadId = downloadManager.enqueue(request);
         Log.e("downloadId:", downloadId+"");
-        if(url == urlUpdate){
+        if(surl == urlUpdate){
             downloadIdUpdate = downloadId;
         }
     }
