@@ -10,14 +10,9 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.MenuItem;
@@ -25,7 +20,6 @@ import android.view.View;
 import android.view.View.OnCreateContextMenuListener;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
-import android.webkit.WebIconDatabase;
 import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.AdapterView.OnItemClickListener;
@@ -38,12 +32,7 @@ import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Field;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
 
 public class FavoriteActivity extends Activity {
     SimpleCursorAdapter adapter;
@@ -51,7 +40,6 @@ public class FavoriteActivity extends Activity {
     EditText editText;
     InputMethodManager IMM;
     ImageButton imageButton_clear;
-    WebIconDatabase WID;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,8 +54,6 @@ public class FavoriteActivity extends Activity {
         imageButton_clear.setVisibility(View.GONE);
         search(editText.getText().toString());
         IMM = (InputMethodManager) getApplicationContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-        WID = WebIconDatabase.getInstance();
-        WID.open(getDir("icons", MODE_PRIVATE).getPath());
     }
 
     class ButtonListener implements View.OnClickListener {
@@ -190,72 +176,30 @@ public class FavoriteActivity extends Activity {
 
     void search(String s) {
         DBHelper helper = new DBHelper(this);
-        Cursor c = helper.query(s);
+        Cursor cursor1 = helper.query(s);
         String[] from = { "_id", "title", "website", "website" };
         int[] to = { R.id.id, R.id.title, R.id.website, R.id.imageView_favicon };
-        adapter = new SimpleCursorAdapter(this, R.layout.favorite_row, c, from, to, 0);
+        adapter = new SimpleCursorAdapter(this, R.layout.favorite_row, cursor1, from, to, 0);
         adapter.setViewBinder(new SimpleCursorAdapter.ViewBinder(){
             public boolean setViewValue(View view, Cursor cursor, int columnIndex){
                 //Log.e("L192", view.toString() + columnIndex);
-                if(view.getId() == R.id.imageView_favicon){
+                if (view.getId() == R.id.imageView_favicon) {
                     String website = cursor.getString(columnIndex);
-                    //                    if (website.startsWith("https://")) {
-                    //                        //((ImageView) view).setImageResource(android.R.drawable.ic_secure);
-                    //                        Runner1 r1 = new Runner1();
-                    //                        r1.setUrl("https://static.easyicon.net/preview/52/523893.gif");
-                    //                        r1.setView(view);
-                    //                        Thread thread1 = new Thread(r1);
-                    //                        thread1.start();
-                    //                        return true;
-                    //                    } else if (website.startsWith("http://")) {
-                    //                        // ((ImageView) view).setImageResource(android.R.drawable.ic_partial_secure);
-                    //                        Runner1 r1 = new Runner1();
-                    //                        r1.setUrl("https://static.easyicon.net/preview/1/11847.gif");
-                    //                        r1.setView(view);
-                    //                        Thread thread1 = new Thread(r1);
-                    //                        thread1.start();
-                    //                        return true;
-                    //                    } else {
-                    //                        ((ImageView) view).setImageResource(R.drawable.network);
-                    //                        return true;
-                    //                    }
-                    Runner1 r1 = new Runner1();
-                    r1.setUrl(website);
-                    r1.setView(view);
-                    Thread thread1 = new Thread(r1);
-                    thread1.start();
+                    if (website.startsWith("https://")) {
+                        ((ImageView) view).setImageResource(android.R.drawable.ic_secure);
+                    } else if (website.startsWith("http://")) {
+                        ((ImageView) view).setImageResource(android.R.drawable.ic_partial_secure);
+                    } else if (website.startsWith("file://")) {
+                        ((ImageView) view).setImageResource(android.R.drawable.stat_notify_sdcard);
+                    } else {
+                        ((ImageView) view).setImageResource(R.drawable.network);
+                    }
                     return true;
                 }
                 return false;
             }
         });
         listView.setAdapter(adapter);
-
-        //        WebIconDatabase WID = WebIconDatabase.getInstance();
-        //        WID.open(getDir("icons", MODE_PRIVATE).getPath());
-        //        for (int i=0; i<adapter.getCount(); i++) {
-        //            LinearLayout layout = (LinearLayout) listView.getAdapter().getView(i, null, null);
-        //            String website = ((TextView) layout.findViewById(R.id.website)).getText().toString();
-        //            if (website.startsWith("https://")) {
-        //                Log.e("star_big_on", website);
-        //                ImageView imageView = (ImageView) layout.findViewById(R.id.imageView_favicon);
-        //                imageView.setImageResource(android.R.drawable.star_big_on);
-        //            } else if (website.startsWith("http://")){
-        //                ImageView imageView = (ImageView) layout.findViewById(R.id.imageView_favicon);
-        //                imageView.setImageResource(android.R.drawable.star_big_off);
-        //                Log.e("star_big_off", website);
-        //            } else {
-        //                Log.e("earth", website);
-        //            }
-        //            WID.requestIconForPageUrl(website, new WebIconDatabase.IconListener() {
-        //                public void onReceivedIcon(String url, Bitmap icon) {
-        //                    Log.e("onReceivedIcon", url);
-        //                    ImageView imageView = (ImageView) layout.findViewById(R.id.imageView_favicon);
-        //                    imageView.setImageBitmap(icon);
-        //                }
-        //            });
-        //        }
-        //        adapter.notifyDataSetChanged();
 
         listView.setOnItemClickListener(new OnItemClickListener() {
             @Override
@@ -305,73 +249,5 @@ public class FavoriteActivity extends Activity {
             search(s.toString());
         }
     }
-
-    public Bitmap webBitMap(String surl) {
-        URL url = null;
-        Bitmap bitmap = null;
-        try {
-            url = new URL(surl);
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
-        try {
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setDoInput(true);
-            conn.connect();
-            InputStream IS = conn.getInputStream();
-            bitmap = BitmapFactory.decodeStream(IS);
-            IS.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return bitmap;
-    }
-
-    class Runner1 implements Runnable {
-        private String surl;
-        private View view;
-
-        private void setUrl(String surl1) {
-            surl = surl1;
-        }
-
-        private void setView(View view1) {
-            view = view1;
-        }
-
-        public void run() {
-            // Bitmap bitmap = webBitMap(surl);
-            // Message msg = new Message();
-            // Bundle bundle = new Bundle();
-            // bundle.putParcelable("bitmap", bitmap);
-            // msg.setData(bundle);
-            // msg.obj = view;
-            // handler.sendMessage(msg);
-            Log.e("L350", surl);
-            WID.requestIconForPageUrl(surl, new WebIconDatabase.IconListener() {
-                public void onReceivedIcon(String url, Bitmap icon) {
-                    Log.e("L353", url);
-                    Message msg = new Message();
-                    Bundle bundle = new Bundle();
-                    bundle.putParcelable("bitmap", icon);
-                    msg.setData(bundle);
-                    msg.obj = view;
-                    handler.sendMessage(msg);
-                }
-            });
-        }
-    }
-
-    static Handler handler = new Handler(){
-        @Override
-        public void handleMessage(Message msg) {
-            super.handleMessage(msg);
-            Bundle bundle = msg.getData();
-            Bitmap bitmap = bundle.getParcelable("bitmap");
-            View view = (View) msg.obj;
-            Log.e("L372", "setIcon");
-            ((ImageView) view).setImageBitmap(bitmap);
-        }
-    };
 
 }
