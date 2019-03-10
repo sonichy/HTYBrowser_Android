@@ -633,11 +633,11 @@ public class MainActivity extends Activity {
                         layout.setOrientation(LinearLayout.VERTICAL);
                         final EditText ET_title = new EditText(MainActivity.this);
                         ET_title.setHint("标题");
-                        ET_title.setText(ptitle);
+                        ET_title.setText(list_webView.get(currentPage).getTitle());
                         layout.addView(ET_title);
                         final EditText ET_url = new EditText(MainActivity.this);
                         ET_title.setHint("网址");
-                        ET_url.setText(list_webView.get(currentPage).getTitle());
+                        ET_url.setText(list_webView.get(currentPage).getUrl());
                         layout.addView(ET_url);
                         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
                         Bitmap icon = list_webView.get(currentPage).getFavicon();
