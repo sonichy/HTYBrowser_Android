@@ -30,7 +30,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	@Override
 	public void onCreate(SQLiteDatabase db) {
 		this.db = db;
-		db.execSQL("CREATE TABLE webfav (_id INTEGER PRIMARY KEY ,website TEXT,title TEXT)");
+		db.execSQL("CREATE TABLE webfav (_id INTEGER PRIMARY KEY , website TEXT, title TEXT)");
 	}
 
 	@Override
