@@ -11,7 +11,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Field;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -45,6 +47,7 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.preference.PreferenceManager;
@@ -55,6 +58,7 @@ import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
@@ -91,8 +95,8 @@ import android.widget.Toast;
 
 public class MainActivity extends Activity {
     Button button_title, button_page;
-    TextView textView_searchCount;
-    EditText editText1, editText_search;
+    TextView textView_searchCount, textView_filesize;
+    EditText editText1, editText_search, editText_download_path;
     ImageButton imageButton_go, imageButton_back, imageButton_forward, imageButton_menu, imageButton_searchPrev, imageButton_searchNext, imageButton_searchClose, imageButton_info;
     // RelativeLayout RelativeLayout1;
     LinearLayout LinearLayout1, LinearLayout2;
@@ -111,6 +115,7 @@ public class MainActivity extends Activity {
     long downloadIdUpdate;
     List<WebView> list_webView = new ArrayList<>();
     int currentPage;
+    int FILECHOOSER_DOWNLOAD_PATH = 3;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -370,7 +375,8 @@ public class MainActivity extends Activity {
         @Override
         public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
             Log.e(Thread.currentThread().getStackTrace()[2] + "", url);
-            downloadBySystem(url, "", "");
+            //downloadBySystem(url, "", "");
+            dialog_new_download(url, "", "");
         }
     }
 
@@ -415,7 +421,8 @@ public class MainActivity extends Activity {
                 mClipboard.setPrimaryClip(theClip);
                 break;
             case 2:
-                downloadBySystem(HTRE,"","");
+                //downloadBySystem(HTRE, "", "");
+                dialog_new_download(HTRE, "", "");
                 break;
             case 3:
                 ClipboardManager cm = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
@@ -504,6 +511,29 @@ public class MainActivity extends Activity {
         if (requestCode == 0) {
             if (intent != null)
                 list_webView.get(currentPage).loadUrl(intent.getStringExtra("url"));
+        }
+        if (requestCode == FILECHOOSER_DOWNLOAD_PATH) {
+            if (resultCode == Activity.RESULT_OK) { //是否选择，没选择就不会继续
+                Uri uri = intent.getData();   // 得到uri，后面就是将uri转化成file的过程。
+                //String scheme = uri.getScheme();
+                Log.e("uri", uri.toString());
+                String[] projection = { "_data" };
+                Cursor cursor  = getContentResolver().query(uri, projection, null, null, null);
+                if(cursor != null) {
+                    int column_index = cursor.getColumnIndexOrThrow("_data");
+                    cursor.moveToFirst();
+                    String filepath = cursor.getString(column_index);
+                    Log.e(Thread.currentThread().getStackTrace()[2] + "", filepath);
+                    int endIndex = filepath.lastIndexOf("/");
+                    if (endIndex != -1) {
+                        String path = filepath.substring(0, endIndex);
+                        Log.e(Thread.currentThread().getStackTrace()[2] + "", path);
+                        //Toast.makeText(MainActivity.this, path, Toast.LENGTH_SHORT).show();
+                        editText_download_path.setText(path);
+                    }
+
+                }
+            }
         }
     }
 
@@ -1329,6 +1359,107 @@ public class MainActivity extends Activity {
             Log.e(Thread.currentThread().getStackTrace()[2] + "", "onNewIntent(" + urln + ")");
             newWindow(urln);
         }
+    }
+
+    void dialog_new_download(final String surl, String contentDisposition, String mimeType){
+        View view = LayoutInflater.from(this).inflate(R.layout.dialog_new_download, null, false);
+        final EditText editText_download_url = (EditText) view.findViewById(R.id.editText_download_url);
+        editText_download_url.setText(surl);
+        EditText editText_download_filename = (EditText) view.findViewById(R.id.editText_download_filename);
+        editText_download_filename.setText(surl.substring(surl.lastIndexOf("/")+1));
+        editText_download_path = (EditText) view.findViewById(R.id.editText_download_path);
+        //String path = Environment.getExternalStorageDirectory().getPath() + "/download";
+        String path = Environment.DIRECTORY_DOWNLOADS;
+        editText_download_path.setText(path);
+        ImageButton imageButton_path = (ImageButton) view.findViewById(R.id.imageButton_path);
+
+        imageButton_path.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+                intent.setType("*/*");
+                startActivityForResult(intent, FILECHOOSER_DOWNLOAD_PATH);
+            }
+        });
+
+        textView_filesize = (TextView) view.findViewById(R.id.textView_filesize);
+        GetFileLengthThread getFileLengthThread = new GetFileLengthThread();
+        getFileLengthThread.surl = editText_download_url.getText().toString();
+        getFileLengthThread.start();
+
+        final AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle("新建下载")
+                .setIcon(android.R.drawable.stat_sys_download)
+                .setView(view)
+                .setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog,	int which) {
+                        //Toast.makeText(getApplicationContext(), "开始下载", Toast.LENGTH_SHORT).show();
+                        String url = editText_download_url.getText().toString();
+                        if(!url.equals("")) {
+                            downloadBySystem(url, "", "");
+                        }
+                    }
+                })
+                .setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog,	int which) {
+                    }
+                })
+                .create();
+        dialog.show();
+    }
+
+    Handler handler = new Handler() {
+        @Override
+        public void handleMessage(android.os.Message msg) {
+            switch (msg.what){
+                case 0:
+                    textView_filesize.setText(formatFileSize(msg.arg1));
+                    break;
+            }
+
+        };
+    };
+
+    class GetFileLengthThread extends Thread{
+        String surl;
+        public void run(){
+            int fileLength = 0;
+            URL url = null;
+            try {
+                url = new URL(surl);
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            }
+            HttpURLConnection urlcon;
+            try {
+                urlcon = (HttpURLConnection) url.openConnection();
+                fileLength = urlcon.getContentLength();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            Message message = Message.obtain();
+            message.what = 0;
+            message.arg1 = fileLength;
+            handler.sendMessage(message);
+        }
+    }
+
+    String formatFileSize(int fileLength){
+        DecimalFormat DF = new DecimalFormat("#.00");
+        String filesize = "";
+        if (fileLength > 1000000000) {
+            filesize = DF.format(fileLength/(1024*1024*1024)) + " GB";
+        } else if(fileLength > 1000000) {
+            filesize = DF.format(fileLength/(1024*1024)) + " MB";
+        } else if (fileLength > 1000) {
+            filesize = DF.format(fileLength/1024) + " KB";
+        } else{
+            filesize = fileLength + " B";
+        }
+        return filesize;
     }
 
 }
