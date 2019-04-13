@@ -13,6 +13,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.MenuItem;
@@ -40,20 +41,43 @@ public class FavoriteActivity extends Activity {
     EditText editText;
     InputMethodManager IMM;
     ImageButton imageButton_clear;
+    int position=0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_favorite);
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
-        editText = (EditText) findViewById(R.id.editText);
-        editText.addTextChangedListener(new EditChangedListener());
-        listView = (ListView) findViewById(R.id.listView1);
+        IMM = (InputMethodManager) getApplicationContext().getSystemService(Context.INPUT_METHOD_SERVICE);
         imageButton_clear = (ImageButton) findViewById(R.id.imageButton_clear);
         imageButton_clear.setOnClickListener(new ButtonListener());
         imageButton_clear.setVisibility(View.GONE);
+        editText = (EditText) findViewById(R.id.editText);
+        editText.addTextChangedListener(new EditChangedListener());
+        listView = (ListView) findViewById(R.id.listView1);
+        listView.setOnItemClickListener(new OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
+                String url = ((TextView) arg1.findViewById(R.id.website)).getText().toString();
+                Intent intent = new Intent(FavoriteActivity.this, MainActivity.class);
+                intent.putExtra("url", url);
+                setResult(RESULT_OK, intent);
+                IMM.hideSoftInputFromWindow(editText.getWindowToken(), 0);
+                finish();
+            }
+        });
+        listView.setOnCreateContextMenuListener(new OnCreateContextMenuListener() {
+            @Override
+            public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuInfo) {
+                AdapterContextMenuInfo info = (AdapterContextMenuInfo) menuInfo;
+                String title = ((TextView) info.targetView.findViewById(R.id.title)).getText().toString();
+                menu.setHeaderTitle(title);
+                menu.add(0, 0, 0, "复制链接");
+                menu.add(0, 1, 1, "删除");
+                menu.add(0, 2, 2, "修改");
+            }
+        });
         search(editText.getText().toString());
-        IMM = (InputMethodManager) getApplicationContext().getSystemService(Context.INPUT_METHOD_SERVICE);
     }
 
     class ButtonListener implements View.OnClickListener {
@@ -78,6 +102,7 @@ public class FavoriteActivity extends Activity {
                 Toast.makeText(getApplicationContext(), "链接已复制", Toast.LENGTH_SHORT).show();
                 break;
             case 1:
+                position = listView.getFirstVisiblePosition();
                 int id = Integer.parseInt(((TextView) menuInfo.targetView.findViewById(R.id.id)).getText().toString());
                 DBHelper helper = new DBHelper(getApplicationContext());
                 helper.del(id);
@@ -182,7 +207,7 @@ public class FavoriteActivity extends Activity {
         adapter = new SimpleCursorAdapter(this, R.layout.favorite_row, cursor1, from, to, 0);
         adapter.setViewBinder(new SimpleCursorAdapter.ViewBinder(){
             public boolean setViewValue(View view, Cursor cursor, int columnIndex){
-                //Log.e("L192", view.toString() + columnIndex);
+                //Log.e(Thread.currentThread().getStackTrace()[2] + "", view.toString() + columnIndex);
                 if (view.getId() == R.id.imageView_favicon) {
                     String website = cursor.getString(columnIndex);
                     if (website.startsWith("https://")) {
@@ -200,45 +225,19 @@ public class FavoriteActivity extends Activity {
             }
         });
         listView.setAdapter(adapter);
-
-        listView.setOnItemClickListener(new OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
-                String url = ((TextView) arg1.findViewById(R.id.website)).getText().toString();
-                Intent intent = new Intent(FavoriteActivity.this, MainActivity.class);
-                intent.putExtra("url", url);
-                setResult(RESULT_OK, intent);
-                IMM.hideSoftInputFromWindow(editText.getWindowToken(), 0);
-                finish();
-            }
-        });
-
-        listView.setOnCreateContextMenuListener(new OnCreateContextMenuListener() {
-            @Override
-            public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuInfo) {
-                AdapterContextMenuInfo info = (AdapterContextMenuInfo) menuInfo;
-                String title = ((TextView) info.targetView.findViewById(R.id.title)).getText().toString();
-                menu.setHeaderTitle(title);
-                menu.add(0, 0, 0, "复制链接");
-                menu.add(0, 1, 1, "删除");
-                menu.add(0, 2, 2, "修改");
-            }
-        });
-
+        Log.e(Thread.currentThread().getStackTrace()[2] + "", position + "");
+        listView.setSelection(position);
     }
 
     class EditChangedListener implements TextWatcher {
-
         @Override
         public void beforeTextChanged(CharSequence s, int start, int count,int after) {
 
         }
-
         @Override
         public void onTextChanged(CharSequence s, int start, int before, int count) {
 
         }
-
         @Override
         public void afterTextChanged(Editable s) {
             if(s.toString().equals("")){
