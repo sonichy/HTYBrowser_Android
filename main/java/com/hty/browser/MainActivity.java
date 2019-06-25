@@ -1,5 +1,6 @@
 package com.hty.browser;
 
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -13,14 +14,16 @@ import java.lang.reflect.Field;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.DownloadManager;
+import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.ClipData;
 import android.content.ClipboardManager;
@@ -54,6 +57,8 @@ import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.text.format.Formatter;
+import android.util.Base64;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -89,7 +94,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
-import android.widget.RelativeLayout;
+//import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -374,7 +379,7 @@ public class MainActivity extends Activity {
     private class MyWebViewDownLoadListener implements DownloadListener {
         @Override
         public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
-            Log.e(Thread.currentThread().getStackTrace()[2] + "", url);
+            Log.e(Thread.currentThread().getStackTrace()[2] + ": ", url);
             //downloadBySystem(url, "", "");
             dialog_new_download(url, "", "");
         }
@@ -396,8 +401,7 @@ public class MainActivity extends Activity {
             menu.add(0, 3, 3, "复制链接");
             menu.add(0, 4, 4, "屏蔽图片");
             menu.add(0, 5, 5, "隐藏图片");
-        }
-        if (result.getType() == HitTestResult.SRC_ANCHOR_TYPE) {
+        } else if (result.getType() == HitTestResult.SRC_ANCHOR_TYPE) {
             menu.setHeaderIcon(android.R.drawable.ic_menu_sort_alphabetically);
             menu.add(0, 2, 2, "下载");
             menu.add(0, 3, 3, "复制链接");
@@ -630,7 +634,7 @@ public class MainActivity extends Activity {
     }
 
     void MenuDialog() {
-        String[] items = { "新建窗口", "关闭当前窗口", "收藏当前页", "收藏夹", "查找", "分享", "视频独立播放", "查看源码", "主页", "全屏", "广告过滤规则", "设置", "检查更新", "关于", "退出" };
+        String[] items = { "新建窗口", "关闭当前窗口", "收藏当前页", "收藏夹", "查找", "分享", "视频独立播放", "视频截图", "视频在播放器中打开", "查看源码", "主页", "全屏", "广告过滤规则", "设置", "检查更新", "关于", "退出" };
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("菜单");
         builder.setIcon(R.drawable.ic_launcher);
@@ -763,36 +767,124 @@ public class MainActivity extends Activity {
                         startActivity(Intent.createChooser(intent, "分享"));
                         break;
                     case 6:
-                        String js = "javascript:var videos=document.getElementsByTagName('video'); if(videos.length!=0){ var url=videos[0].src; document.body.innerHTML=''; var video=document.createElement('video'); video.style.width='100%'; video.style.height='auto'; video.src=url; video.controls=true; document.body.appendChild(video); var a=document.createElement('a'); a.textContent=url; a.href=url; document.body.appendChild(a); } else { var iframes=document.getElementsByTagName('iframe'); if(iframes.length!=0) window.location.href=iframes[0].src; }";
+                        String js = "javascript:var videos=document.getElementsByTagName('video'); if(videos.length!=0){ var url=videos[0].src;window.location.href=url; } else { var iframes=document.getElementsByTagName('iframe'); if(iframes.length!=0) window.location.href=iframes[0].src; }";
                         list_webView.get(currentPage).loadUrl(js);
                         break;
                     case 7:
+                        js = "javascript:function capture(){var videos=document.getElementsByTagName('video');if(videos.length==0){var iframe=document.getElementsByTagName('iframe');videos=iframe[0].contentWindow.document.getElementsByTagName('video');}var canvas=document.createElement('canvas');videos[0].crossOrigin='*';canvas.width=videos[0].videoWidth;canvas.height=videos[0].videoHeight;canvas.getContext('2d').drawImage(videos[0],0,0,canvas.width,canvas.height);var s = canvas.toDataURL('image/jpeg',1.0); return s;}";
+                        list_webView.get(currentPage).loadUrl(js);
+                        list_webView.get(currentPage).evaluateJavascript("javascript:capture()", new ValueCallback<String>() {
+                            @Override
+                            public void onReceiveValue(String value) {
+                                Log.e(Thread.currentThread().getStackTrace()[2] + "", value);
+                                if(!"null".equals(value)){
+                                    //字符串转Bitmap，https://www.jianshu.com/p/c9a18050a249
+                                    byte[] bitmapArray = Base64.decode(value.split(",")[1], Base64.DEFAULT);
+                                    final Bitmap bitmap = BitmapFactory.decodeByteArray(bitmapArray, 0, bitmapArray.length);
+                                    LinearLayout layout = new LinearLayout(MainActivity.this);
+                                    layout.setOrientation(LinearLayout.VERTICAL);
+                                    ImageView imageView = new ImageView(MainActivity.this);
+                                    imageView.setImageBitmap(bitmap);
+                                    layout.addView(imageView);
+                                    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                                    builder.setTitle("视频截图(" + bitmap.getWidth() + "X" + bitmap.getHeight() + ")");
+                                    builder.setView(layout);
+                                    builder.setPositiveButton("保存", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+                                            String dir = Environment.getExternalStorageDirectory().getPath() + "/Pictures/Screenshots/";
+                                            File temp = new File(dir);  // 如果文件夹不存在则创建
+                                            if (!temp.exists()) {
+                                                temp.mkdir();
+                                            }
+                                            Date date = new Date();
+                                            SimpleDateFormat SDF = new SimpleDateFormat("yyyyMMddHHmmss");
+                                            String stime = SDF.format(date);
+                                            String path = dir + stime + ".jpg";
+                                            File file = new File(path);
+                                            BufferedOutputStream BOS = null;
+                                            try {
+                                                BOS = new BufferedOutputStream(new FileOutputStream(file));
+                                            }catch (FileNotFoundException e){
+                                                Log.e(Thread.currentThread().getStackTrace()[2] + "", "" + e);
+                                            }
+                                            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, BOS);
+                                            try {
+                                                BOS.flush();
+                                            }catch (IOException e) {
+                                                e.printStackTrace();
+                                            }
+                                            try {
+                                                BOS.close();
+                                            }catch (IOException e) {
+                                                e.printStackTrace();
+                                            }
+                                            Toast.makeText(getApplicationContext(), "保存到："+path, Toast.LENGTH_SHORT).show();
+                                            MediaScannerConnection.scanFile(MainActivity.this, new String[] { path }, null, null);
+                                        }
+                                    });
+                                    builder.setNegativeButton("关闭", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+                                        }
+                                    });
+                                    builder.create().show();
+                                }else{
+                                    Toast.makeText(getApplicationContext(), "请先播放视频或把视频独立播放", Toast.LENGTH_SHORT).show();
+                                }
+                            }
+                        });
+                        break;
+                    case 8:
+                        //网址正确，运行崩溃，本地播放器没有注册网络视频类型？
+                        js = "javascript:function getVideoUrl(){var video_url='';var videos=document.getElementsByTagName('video');if(videos.length==0){var iframe=document.getElementsByTagName('iframe');videos=iframe[0].contentWindow.document.getElementsByTagName('video');}else{video_url=videos[0].src;}return video_url;}";
+                        list_webView.get(currentPage).loadUrl(js);
+                        list_webView.get(currentPage).evaluateJavascript("javascript:getVideoUrl()", new ValueCallback<String>() {
+                            @Override
+                            public void onReceiveValue(String value) {
+                                Log.e(Thread.currentThread().getStackTrace()[2] + "", "" + value);
+                                if(!"null".equals(value)) {
+                                    try {
+                                        Intent intent1 = new Intent(Intent.ACTION_VIEW);
+                                        String type = "video/*";
+                                        Uri uri = Uri.parse(value);
+                                        intent1.setDataAndType(uri, type);
+                                        startActivity(intent1);
+                                    }catch (ActivityNotFoundException e){
+                                        Log.e(Thread.currentThread().getStackTrace()[2] + "", "" + e);
+                                        Toast.makeText(getApplicationContext(), "系统默认播放器不能打开视频", Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+                            }
+                        });
+                        break;
+                    case 9:
                         js = "javascript:var s='<html>'+document.getElementsByTagName('html')[0].innerHTML+'</html>'; document.body.innerHTML=''; var pre=document.createElement('pre'); document.body.appendChild(pre); pre.textContent=s;";
                         list_webView.get(currentPage).loadUrl(js);
                         break;
-                    case 8:
+                    case 10:
                         list_webView.get(currentPage).loadUrl(sharedPreferences.getString("homepage",""));
                         break;
-                    case 9:
+                    case 11:
                         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
                         LinearLayout2.setVisibility(View.GONE);
                         pgb1.setVisibility(View.GONE);
                         isFullScreen = true;
                         break;
-                    case 10:
+                    case 12:
                         DialogBlockList();
                         break;
-                    case 11:
+                    case 13:
                         startActivity(new Intent(MainActivity.this, SettingsActivity.class));
                         break;
-                    case 12:
+                    case 14:
                         isManualCheckUpdate = true;
                         new Thread(CU).start();
                         break;
-                    case 13:
+                    case 15:
                         list_webView.get(currentPage).loadUrl("file:///android_asset/about.htm");
                         break;
-                    case 14:
+                    case 16:
                         MainActivity.this.finish();
                         break;
                 }
@@ -948,18 +1040,27 @@ public class MainActivity extends Activity {
             s = new String(ostream.toByteArray());
             istream.close();
             ostream.close();
+            return s;
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            return "";
+            Log.e(Thread.currentThread().getStackTrace()[2] + "", "" + e);
+            String path = getFilesDir().getAbsolutePath() + "/blockrules";
+            File file = new File(path);
+            try {
+                file.createNewFile();
+            } catch (IOException e1) {
+                Log.e(Thread.currentThread().getStackTrace()[2] + "", "" + e1);
+            }
+            return s;
         } catch (IOException e) {
-            e.printStackTrace();
+            Log.e(Thread.currentThread().getStackTrace()[2] + "", "" + e);
+            return s;
         }
-        return s;
     }
 
     void ADBlock(){
         String s = ReadFile("blockrules");
-        if(!s.equals("")) {
+        Log.e(Thread.currentThread().getStackTrace()[2] + "", "" + s);
+        if(!"".equals(s)) {
             String rules = s.replace("\n", ",");
             if (rules.endsWith(",")) {
                 rules = rules.substring(0, rules.length() - 1);
@@ -1246,17 +1347,20 @@ public class MainActivity extends Activity {
         public void onProgressChanged(WebView view, int newProgress) {
             super.onProgressChanged(view, newProgress);
             pgb1.setProgress(newProgress);
-            if(sharedPreferences.getBoolean("switch_adBlock",true)){
+            if(sharedPreferences.getBoolean("switch_adBlock",false)){
                 ADBlock();
             }
             if(sharedPreferences.getBoolean("switch_iframeBlock",false)) {
-                if (!view.getUrl().contains("baidu.com")){
-                    iframeBlock();
+                if (view.getUrl() != null) {
+                    if (!view.getUrl().contains("baidu.com")) {
+                        iframeBlock();
+                    }
                 }
             }
             // 链接关键字屏蔽
             if(sharedPreferences.getBoolean("switch_filter",false)){
                 String sf = sharedPreferences.getString("filter","");
+                Log.e(Thread.currentThread().getStackTrace()[2] + "", "" + sf);
                 if(!sf.equals("")) {
                     String js = "javascript:var s='"+sf+"';var sl=s.split(';');var a=document.getElementsByTagName('a');for(var i=0;i<a.length;i++){for(var j=0;j<sl.length;j++){if(a[i].textContent.indexOf(sl[j])!=-1){a[i].textContent='';}}}";
                     view.loadUrl(js);
@@ -1265,10 +1369,16 @@ public class MainActivity extends Activity {
             // 链接关键字高亮
             if(sharedPreferences.getBoolean("switch_highlight",false)){
                 String shl = sharedPreferences.getString("highlight","");
+                Log.e(Thread.currentThread().getStackTrace()[2] + "", "" + shl);
                 if(!shl.equals("")) {
                     String js = "javascript:var s='"+shl+"';var sl=s.split(';');var a=document.getElementsByTagName('a');for(var i=0;i<a.length;i++){for(var j=0;j<sl.length;j++){if(a[i].textContent.indexOf(sl[j])!=-1){a[i].style.color='white';a[i].style.backgroundColor='#DA3434';}}}";
                     view.loadUrl(js);
                 }
+            }
+            //图片宽度超出父元素适应父元素
+            if(sharedPreferences.getBoolean("switch_shrink",false)) {
+                String js = "javascript:var imgs=document.getElementsByTagName('img');for(var i=0;i<imgs.length;i++){if(imgs[i].parentNode.clientWidth > 0){if(imgs[i].clientWidth>imgs[i].parentNode.clientWidth){imgs[i].width=imgs[i].parentNode.clientWidth;}}}";
+                view.loadUrl(js);
             }
         }
 
@@ -1383,9 +1493,11 @@ public class MainActivity extends Activity {
         });
 
         textView_filesize = (TextView) view.findViewById(R.id.textView_filesize);
-        GetFileLengthThread getFileLengthThread = new GetFileLengthThread();
-        getFileLengthThread.surl = editText_download_url.getText().toString();
-        getFileLengthThread.start();
+        if(!surl.startsWith("data:")) {
+            GetFileLengthThread getFileLengthThread = new GetFileLengthThread();
+            getFileLengthThread.surl = editText_download_url.getText().toString();
+            getFileLengthThread.start();
+        }
 
         final AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle("新建下载")
@@ -1415,7 +1527,8 @@ public class MainActivity extends Activity {
         public void handleMessage(android.os.Message msg) {
             switch (msg.what){
                 case 0:
-                    textView_filesize.setText(formatFileSize(msg.arg1));
+                    //textView_filesize.setText(formatFileSize(msg.arg1));
+                    textView_filesize.setText(Formatter.formatFileSize(MainActivity.this, msg.arg1));
                     break;
             }
 
@@ -1445,21 +1558,6 @@ public class MainActivity extends Activity {
             message.arg1 = fileLength;
             handler.sendMessage(message);
         }
-    }
-
-    String formatFileSize(int fileLength){
-        DecimalFormat DF = new DecimalFormat("#.00");
-        String filesize = "";
-        if (fileLength > 1000000000) {
-            filesize = DF.format(fileLength/(1024*1024*1024)) + " GB";
-        } else if(fileLength > 1000000) {
-            filesize = DF.format(fileLength/(1024*1024)) + " MB";
-        } else if (fileLength > 1000) {
-            filesize = DF.format(fileLength/1024) + " KB";
-        } else{
-            filesize = fileLength + " B";
-        }
-        return filesize;
     }
 
 }

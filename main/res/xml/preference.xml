@@ -50,4 +50,14 @@
 
     </PreferenceCategory>
 
+    <PreferenceCategory
+        android:title="图片宽度超出父元素缩小到父元素">
+
+        <SwitchPreference
+            android:key="switch_shrink"
+            android:defaultValue="false"
+            android:title="缩小开关"/>
+
+    </PreferenceCategory>
+
 </PreferenceScreen>

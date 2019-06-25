@@ -41,7 +41,7 @@ public class FavoriteActivity extends Activity {
     EditText editText;
     InputMethodManager IMM;
     ImageButton imageButton_clear;
-    int position=0;
+    int position = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
