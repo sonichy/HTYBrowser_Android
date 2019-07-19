@@ -1087,14 +1087,10 @@ public class MainActivity extends Activity {
         // request.setTitle("This is title");
         // 设置通知栏的描述
         request.setDescription(surl);
-        // 允许在计费流量下下载
-        request.setAllowedOverMetered(false);
         // 允许该记录在下载管理界面可见
         //request.setVisibleInDownloadsUi(true);
         // 允许漫游时下载
         request.setAllowedOverRoaming(true);
-        // 允许下载的网路类型
-        request.setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI);
         // 设置下载文件保存的路径和文件名
         String fileName  = URLUtil.guessFileName(surl, contentDisposition, mimeType);
         Log.e(Thread.currentThread().getStackTrace()[2] + "", fileName);
