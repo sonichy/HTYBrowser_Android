@@ -75,6 +75,7 @@ public class FavoriteActivity extends Activity {
                 menu.add(0, 0, 0, "复制链接");
                 menu.add(0, 1, 1, "删除");
                 menu.add(0, 2, 2, "修改");
+                menu.add(0, 3, 3, "分享");
             }
         });
         search(editText.getText().toString());
@@ -189,6 +190,13 @@ public class FavoriteActivity extends Activity {
                     }
                 });
                 builder.create().show();
+                break;
+            case 3:
+                Intent intent = new Intent();
+                intent.setAction(Intent.ACTION_SEND);
+                intent.putExtra(Intent.EXTRA_TEXT, ((TextView) menuInfo.targetView.findViewById(R.id.title)).getText().toString() + "\n" + ((TextView) menuInfo.targetView.findViewById(R.id.website)).getText().toString());
+                intent.setType("text/plain");
+                startActivity(Intent.createChooser(intent, "分享"));
                 break;
         }
         return true;

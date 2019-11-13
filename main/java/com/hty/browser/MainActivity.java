@@ -121,6 +121,7 @@ public class MainActivity extends Activity {
     List<WebView> list_webView = new ArrayList<>();
     int currentPage;
     int FILECHOOSER_DOWNLOAD_PATH = 3;
+    DownloadCompleteReceiver receiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -241,7 +242,7 @@ public class MainActivity extends Activity {
         };
         new Thread(CU).start();
 
-        DownloadCompleteReceiver receiver = new DownloadCompleteReceiver();
+        receiver = new DownloadCompleteReceiver();
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
         registerReceiver(receiver, intentFilter);
@@ -634,7 +635,7 @@ public class MainActivity extends Activity {
     }
 
     void MenuDialog() {
-        String[] items = { "新建窗口", "关闭当前窗口", "收藏当前页", "收藏夹", "查找", "分享", "视频独立播放", "视频截图", "视频在播放器中打开", "查看源码", "主页", "全屏", "广告过滤规则", "设置", "检查更新", "关于", "退出" };
+        String[] items = { "新建窗口", "关闭当前窗口", "收藏当前页", "收藏夹", "查找", "分享", "视频独立播放", "视频截图", "视频在播放器中打开", "查看源码", "主页", "全屏", "广告过滤规则", "设置", "检查更新", "关于", "退出", "清除缓存" };
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("菜单");
         builder.setIcon(R.drawable.ic_launcher);
@@ -885,7 +886,11 @@ public class MainActivity extends Activity {
                         list_webView.get(currentPage).loadUrl("file:///android_asset/about.htm");
                         break;
                     case 16:
+                        unregisterReceiver(receiver);
                         MainActivity.this.finish();
+                        break;
+                    case 17:
+                        list_webView.get(currentPage).clearCache(true);
                         break;
                 }
             }
@@ -1190,7 +1195,7 @@ public class MainActivity extends Activity {
         button_page.setText(currentPage + 1 + "");
     }
 
-    void settingWebView(final WebView webView){
+    void settingWebView(WebView webView){
         // 菜单
         registerForContextMenu(webView);
         // 支持获取手势焦点
@@ -1233,12 +1238,9 @@ public class MainActivity extends Activity {
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
                 Log.e(Thread.currentThread().getStackTrace()[2] + "", url);
                 // 协议过滤
-                if (url.startsWith("http") && !url.startsWith("https://cdn-haokanapk.baidu.com/")) {
+                if (url.startsWith("http") || url.startsWith("ftp://") && !url.startsWith("https://cdn-haokanapk.baidu.com/")) {
                     view.loadUrl(url);
                     return false;
-                } else if (url.startsWith("tbopen://")){
-                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                    startActivity(intent);
                 }
                 return true; // 拦截原链接
             }
@@ -1277,16 +1279,16 @@ public class MainActivity extends Activity {
                             Log.e(Thread.currentThread().getStackTrace()[2] + "", failingUrl);
                             String url = "http://m.baidu.com/s?word=" + urlo;
                             editText1.setText(url);
-                            webView.loadUrl(url);
+                            view.loadUrl(url);
                             urln = url;
                             break;
                         case WebViewClient.ERROR_UNSUPPORTED_SCHEME:
                             Log.e(Thread.currentThread().getStackTrace()[2] + "",failingUrl);
                     }
                 } else {
-                    webView.loadDataWithBaseURL(
+                    view.loadDataWithBaseURL(
                             "",
-                            "<html><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no\"/><style>h1{font-size:10vw;margin:40vh auto;text-align:center;}</style><h1>网络未连接</h1></html>",
+                            "<html><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no\"/><title>网络未连接</title><style>h1{font-size:10vw;margin:40vh auto;text-align:center;}</style><body><h1>网络未连接</h1></body></html>",
                             "text/html", "utf-8", "");
                 }
             }
@@ -1309,9 +1311,9 @@ public class MainActivity extends Activity {
         webView.setOnTouchListener(new OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
+                button_title.requestFocus();
                 button_title.setVisibility(View.VISIBLE);
                 editText1.setVisibility(View.GONE);
-                webView.requestFocus();
                 IMM.hideSoftInputFromWindow(editText1.getWindowToken(), 0);
                 return false;
             }
@@ -1430,16 +1432,18 @@ public class MainActivity extends Activity {
         // target="_blank" 处理
         @Override
         public boolean onCreateWindow(WebView view, boolean isDialog, boolean isUserGesture, Message resultMsg) {
-            WebView webView = new WebView(MainActivity.this);
-            settingWebView(webView);
-            webViewLayout.removeAllViews();
-            webViewLayout.addView(webView);
-            list_webView.add(webView);
-            currentPage = list_webView.size() - 1;
-            button_page.setText(currentPage + 1 + "");
-            WebView.WebViewTransport transport = (WebView.WebViewTransport) resultMsg.obj;
-            transport.setWebView(webView);
-            resultMsg.sendToTarget();
+            if(isUserGesture) {
+                WebView webView = new WebView(MainActivity.this);
+                settingWebView(webView);
+                webViewLayout.removeAllViews();
+                webViewLayout.addView(webView);
+                list_webView.add(webView);
+                currentPage = list_webView.size() - 1;
+                button_page.setText(currentPage + 1 + "");
+                WebView.WebViewTransport transport = (WebView.WebViewTransport) resultMsg.obj;
+                transport.setWebView(webView);
+                resultMsg.sendToTarget();
+            }
             return true;
         }
 
@@ -1450,7 +1454,7 @@ public class MainActivity extends Activity {
         if (intent.getAction().equals(Intent.ACTION_VIEW)) {
             urln = intent.getDataString();
             newWindow(urln);
-        }else{
+        } else {
             newWindow(sharedPreferences.getString("homepage","http://www.baidu.com"));
         }
     }
