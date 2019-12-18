@@ -859,7 +859,7 @@ public class MainActivity extends Activity {
                             }
                         });
                         break;
-                    case 9:
+                    case 9://改多标签后失效
                         js = "javascript:var s='<html>'+document.getElementsByTagName('html')[0].innerHTML+'</html>'; document.body.innerHTML=''; var pre=document.createElement('pre'); document.body.appendChild(pre); pre.textContent=s;";
                         list_webView.get(currentPage).loadUrl(js);
                         break;
@@ -1239,10 +1239,15 @@ public class MainActivity extends Activity {
                 Log.e(Thread.currentThread().getStackTrace()[2] + "", url);
                 // 协议过滤
                 if (url.startsWith("http") || url.startsWith("ftp://") && !url.startsWith("https://cdn-haokanapk.baidu.com/")) {
-                    view.loadUrl(url);
+                    if (url.startsWith("https://baiduyunbo.com/?id=")) {
+                        String id = url.replace("https://baiduyunbo.com/?id=","");
+                        view.loadUrl("https://m3u8.cdnpan.com/"+ id + ".m3u8");
+                    } else {
+                        view.loadUrl(url);
+                    }
                     return false;
                 }
-                return true; // 拦截原链接
+                return true; //不跳转
             }
 
             @Override
