@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:app="http://schemas.android.com/apk/res-auto"
               xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -10,24 +9,38 @@
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content" >
-        
-      <TextView
-          android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:layout_centerHorizontal="true"
-          android:layout_centerVertical="true"
-          android:text="收藏夹"
-          android:textSize="20sp" />
-      
-      <TextView
-			    android:layout_width="wrap_content"
-			    android:layout_height="wrap_content"
-			    android:layout_alignParentRight="true"
-			    android:layout_centerVertical="true"
-			    android:clickable="true"
-			    android:onClick="favback"
-			    android:text=" × "			    
-			    android:textSize="30sp" />
+
+        <TextView
+            android:id="@+id/textView_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:text="收藏夹"
+            android:textSize="20sp" />
+
+        <Button
+            android:id="@+id/button_favback"
+            style="@android:style/Widget.DeviceDefault.Button.Small"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="false"
+            android:layout_centerVertical="false"
+            android:alpha="0.3"
+            android:background="@null"
+            android:onClick="favback"
+            android:text="←"
+            android:textSize="30sp" />
+
+        <Button
+            style="@android:style/Widget.DeviceDefault.Button.Small"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:alpha="0.3"
+            android:background="@null"
+            android:onClick="menuFav"
+            android:text="≡"
+            android:textSize="30sp" />
 
     </RelativeLayout>
 
@@ -61,7 +74,7 @@
             android:background="#ffffff"
             android:paddingLeft="-15dp"
             android:paddingRight="-15dp"
-            android:src="@android:drawable/ic_notification_clear_all"/>
+            android:src="@android:drawable/ic_menu_close_clear_cancel" />
     </LinearLayout>
 
     <ListView

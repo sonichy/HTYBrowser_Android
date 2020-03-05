@@ -101,12 +101,11 @@ import android.widget.Toast;
 public class MainActivity extends Activity {
     Button button_title, button_page;
     TextView textView_searchCount, textView_filesize;
-    EditText editText1, editText_search, editText_download_path;
-    ImageButton imageButton_go, imageButton_back, imageButton_forward, imageButton_menu, imageButton_searchPrev, imageButton_searchNext, imageButton_searchClose, imageButton_info;
+    EditText editText_url, editText_search, editText_download_path;
+    ImageButton button_back, button_forward, button_menu, button_go, button_search_prev, button_search_next, button_search_close, button_info, button_play;
     // RelativeLayout RelativeLayout1;
     LinearLayout LinearLayout1, LinearLayout2;
     FrameLayout webViewLayout, video, searchBar;
-    ImageView imageView1;
     InputMethodManager IMM;
     ProgressBar pgb1;
     String urlo = "", HTRE = "", ptitle = "", urln = "";
@@ -142,6 +141,7 @@ public class MainActivity extends Activity {
         webViewLayout = (FrameLayout) findViewById(R.id.webViewLayout);
         video = (FrameLayout) findViewById(R.id.video);
         searchBar = (FrameLayout) findViewById(R.id.searchBar);
+        searchBar.setVisibility(View.GONE);
         pgb1 = (ProgressBar) findViewById(R.id.progressBar1);
         // if (VERSION.SDK_INT > 18) {
         // getWindow().addFlags(
@@ -159,39 +159,40 @@ public class MainActivity extends Activity {
         // // lp.topMargin = 45;
         // // RelativeLayout1.setLayoutParams(lp);
         // }
-        imageButton_go = (ImageButton) findViewById(R.id.imageButton_go);
-        imageButton_back = (ImageButton) findViewById(R.id.imageButton_back);
-        imageButton_forward = (ImageButton) findViewById(R.id.imageButton_forward);
-        imageButton_menu = (ImageButton) findViewById(R.id.imageButton_menu);
-        imageView1 = (ImageView) findViewById(R.id.imageView1);
+        button_go = (ImageButton) findViewById(R.id.button_go);
+        button_back = (ImageButton) findViewById(R.id.button_back);
+        button_forward = (ImageButton) findViewById(R.id.button_forward);
+        button_menu = (ImageButton) findViewById(R.id.button_menu);
+        button_play = (ImageButton) findViewById(R.id.button_play);
+        button_play.setVisibility(View.GONE);
         editText_search = (EditText) findViewById(R.id.editText_search);
-        textView_searchCount = (TextView) findViewById(R.id.textView_searchCount);
-        imageButton_searchPrev = (ImageButton) findViewById(R.id.imageButton_searchPrev);
-        imageButton_searchNext = (ImageButton) findViewById(R.id.imageButton_searchNext);
-        imageButton_searchClose = (ImageButton) findViewById(R.id.imageButton_searchClose);
-        imageButton_info = (ImageButton) findViewById(R.id.imageButton_info);
+        textView_searchCount = (TextView) findViewById(R.id.textView_search_count);
+        button_search_prev = (ImageButton) findViewById(R.id.button_search_prev);
+        button_search_next = (ImageButton) findViewById(R.id.button_search_next);
+        button_search_close = (ImageButton) findViewById(R.id.button_search_close);
+        button_info = (ImageButton) findViewById(R.id.imageButton_info);
         button_title = (Button) findViewById(R.id.button_title);
         button_page = (Button) findViewById(R.id.button_page);
         button_title.setOnClickListener(new ButtonListener());
         button_page.setOnClickListener(new ButtonListener());
-        imageButton_go.setOnClickListener(new ButtonListener());
-        imageButton_back.setOnClickListener(new ButtonListener());
-        imageButton_forward.setOnClickListener(new ButtonListener());
-        imageButton_menu.setOnClickListener(new ButtonListener());
-        imageView1.setOnClickListener(new ButtonListener());
-        imageButton_searchPrev.setOnClickListener(new ButtonListener());
-        imageButton_searchNext.setOnClickListener(new ButtonListener());
-        imageButton_searchClose.setOnClickListener(new ButtonListener());
-        editText1 = (EditText) findViewById(R.id.EditText1);
-        editText1.setVisibility(View.GONE);
+        button_go.setOnClickListener(new ButtonListener());
+        button_back.setOnClickListener(new ButtonListener());
+        button_forward.setOnClickListener(new ButtonListener());
+        button_menu.setOnClickListener(new ButtonListener());
+        button_play.setOnClickListener(new ButtonListener());
+        button_search_prev.setOnClickListener(new ButtonListener());
+        button_search_next.setOnClickListener(new ButtonListener());
+        button_search_close.setOnClickListener(new ButtonListener());
+        editText_url = (EditText) findViewById(R.id.editText_url);
+        editText_url.setVisibility(View.GONE);
         WebIconDatabase.getInstance().open(getDir("icons", MODE_PRIVATE).getPath());    //获取图标数据库路径
         getDataFromIntent(getIntent());
 
-        editText1.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+        editText_url.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 if (actionId == EditorInfo.IME_ACTION_GO) {
-                    loadPage(editText1.getText().toString());
+                    loadPage(editText_url.getText().toString());
                     return true;
                 }
                 return false;
@@ -306,7 +307,7 @@ public class MainActivity extends Activity {
             switch (v.getId()) {
                 case R.id.button_title:
                     button_title.setVisibility(View.GONE);
-                    editText1.setVisibility(View.VISIBLE);
+                    editText_url.setVisibility(View.VISIBLE);
                     break;
                 case R.id.button_page:
                     List<String> list_title = new ArrayList<>();
@@ -327,48 +328,48 @@ public class MainActivity extends Activity {
                                 webViewLayout.addView(webView);
                                 button_page.setText(which + 1 + "");
                                 button_title.setText(webView.getTitle());
-                                editText1.setText(webView.getUrl());
-                                imageButton_info.setImageBitmap(webView.getFavicon());
+                                editText_url.setText(webView.getUrl());
+                                button_info.setImageBitmap(webView.getFavicon());
                                 currentPage = which;
                             }
                         }
                     });
                     builder.create().show();
                     break;
-                case R.id.imageButton_go:
+                case R.id.button_go:
                     //loadPage(editText1.getText().toString());
-                    list_webView.get(currentPage).loadUrl(editText1.getText().toString());
+                    list_webView.get(currentPage).loadUrl(editText_url.getText().toString());
                     break;
-                case R.id.imageButton_back:
+                case R.id.button_back:
                     if (list_webView.get(currentPage).canGoBack()) {
                         list_webView.get(currentPage).goBack();
-                        imageButton_forward.setEnabled(true);
+                        button_forward.setEnabled(true);
                     } else {
-                        imageButton_back.setEnabled(false);
+                        button_back.setEnabled(false);
                     }
                     break;
-                case R.id.imageButton_forward:
+                case R.id.button_forward:
                     if (list_webView.get(currentPage).canGoForward()) {
                         list_webView.get(currentPage).goForward();
-                        imageButton_back.setEnabled(true);
+                        button_back.setEnabled(true);
                     } else {
-                        imageButton_forward.setEnabled(false);
+                        button_forward.setEnabled(false);
                     }
                     break;
-                case R.id.imageButton_menu:
+                case R.id.button_menu:
                     MenuDialog();
                     break;
-                case R.id.imageView1:
+                case R.id.button_play:
                     playVideo();
-                    imageView1.setVisibility(View.GONE);
+                    button_play.setVisibility(View.GONE);
                     break;
-                case R.id.imageButton_searchPrev:
+                case R.id.button_search_prev:
                     list_webView.get(currentPage).findNext(false);
                     break;
-                case R.id.imageButton_searchNext:
+                case R.id.button_search_next:
                     list_webView.get(currentPage).findNext(true);
                     break;
-                case R.id.imageButton_searchClose:
+                case R.id.button_search_close:
                     editText_search.setText("");
                     IMM.hideSoftInputFromWindow(editText_search.getWindowToken(), 0);
                     searchBar.setVisibility(View.GONE);
@@ -450,7 +451,7 @@ public class MainActivity extends Activity {
         Log.e(Thread.currentThread().getStackTrace()[2] + "", keyCode + ", " + event);
         if (keyCode == KeyEvent.KEYCODE_BACK) {
             if (isFullScreen) {
-                imageView1.setVisibility(View.GONE);
+                button_play.setVisibility(View.GONE);
                 quitFullScreen();
             } else {
                 if (list_webView.get(currentPage).canGoBack()) {
@@ -487,7 +488,7 @@ public class MainActivity extends Activity {
         }
         // editText1.setText(url);
         Log.e(Thread.currentThread().getStackTrace()[2] + "", url);
-        IMM.hideSoftInputFromWindow(editText1.getWindowToken(), 0);
+        IMM.hideSoftInputFromWindow(editText_url.getWindowToken(), 0);
         editText_search.setText("");
         list_webView.get(currentPage).loadUrl(url);
         // btnBack.setEnabled(true);
@@ -614,7 +615,7 @@ public class MainActivity extends Activity {
         //Log.e(Thread.currentThread().getStackTrace()[2] + "", "onPause");
         pauseVideo();
         if (isFullScreen) {
-            imageView1.setVisibility(View.VISIBLE);
+            button_play.setVisibility(View.VISIBLE);
         }
         super.onPause();
     }
@@ -634,11 +635,11 @@ public class MainActivity extends Activity {
         list_webView.get(currentPage).loadUrl(js);
     }
 
-    void MenuDialog() {
+    private void MenuDialog() {
         String[] items = { "新建窗口", "关闭当前窗口", "收藏当前页", "收藏夹", "查找", "分享", "视频独立播放", "视频截图", "视频在播放器中打开", "查看源码", "主页", "全屏", "广告过滤规则", "设置", "检查更新", "关于", "退出", "清除缓存" };
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("菜单");
-        builder.setIcon(R.drawable.ic_launcher);
+        builder.setIcon(android.R.drawable.ic_menu_preferences);
         builder.setItems(items, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
@@ -659,8 +660,8 @@ public class MainActivity extends Activity {
                             WebView webView = list_webView.get(currentPage);
                             webViewLayout.addView(webView);
                             button_title.setText(webView.getTitle());
-                            editText1.setText(webView.getUrl());
-                            imageButton_info.setImageBitmap(webView.getFavicon());
+                            editText_url.setText(webView.getUrl());
+                            button_info.setImageBitmap(webView.getFavicon());
                         }
                         break;
                     case 2:
@@ -937,8 +938,8 @@ public class MainActivity extends Activity {
                                                 }
                                             }
                                             String content="";
-                                            for(int i=0;i<rulelist.size();i++){
-                                                content += rulelist.get(i)+"\n";
+                                            for(int i=0; i<rulelist.size(); i++){
+                                                content += rulelist.get(i) + "\n";
                                             }
                                             FileOutputStream outStream = null;
                                             try {
@@ -1064,7 +1065,7 @@ public class MainActivity extends Activity {
 
     void ADBlock(){
         String s = ReadFile("blockrules");
-        Log.e(Thread.currentThread().getStackTrace()[2] + "", "" + s);
+        //Log.e(Thread.currentThread().getStackTrace()[2] + "", "" + s);
         if(!"".equals(s)) {
             String rules = s.replace("\n", ",");
             if (rules.endsWith(",")) {
@@ -1256,13 +1257,13 @@ public class MainActivity extends Activity {
                 //Log.e(Thread.currentThread().getStackTrace()[2] + "", url);
                 button_title.setText(url);
                 button_title.setVisibility(View.VISIBLE);
-                editText1.setText(url);
-                editText1.setVisibility(View.GONE);
+                editText_url.setText(url);
+                editText_url.setVisibility(View.GONE);
                 urln = url;
-                imageButton_back.setEnabled(true);
-                IMM.hideSoftInputFromWindow(editText1.getWindowToken(), 0);
+                button_back.setEnabled(true);
+                IMM.hideSoftInputFromWindow(editText_url.getWindowToken(), 0);
                 pgb1.setVisibility(View.VISIBLE);
-                imageButton_info.setImageResource(android.R.drawable.ic_menu_info_details);
+                button_info.setImageResource(android.R.drawable.ic_menu_info_details);
                 // if(favicon != null) {
                 //   imageButton_info.setImageBitmap(favicon);
                 // }
@@ -1283,7 +1284,7 @@ public class MainActivity extends Activity {
                         case WebViewClient.ERROR_HOST_LOOKUP:   // 找不到主机，跳转百度搜索
                             Log.e(Thread.currentThread().getStackTrace()[2] + "", failingUrl);
                             String url = "http://m.baidu.com/s?word=" + urlo;
-                            editText1.setText(url);
+                            editText_url.setText(url);
                             view.loadUrl(url);
                             urln = url;
                             break;
@@ -1318,8 +1319,8 @@ public class MainActivity extends Activity {
             public boolean onTouch(View v, MotionEvent event) {
                 button_title.requestFocus();
                 button_title.setVisibility(View.VISIBLE);
-                editText1.setVisibility(View.GONE);
-                IMM.hideSoftInputFromWindow(editText1.getWindowToken(), 0);
+                editText_url.setVisibility(View.GONE);
+                IMM.hideSoftInputFromWindow(editText_url.getWindowToken(), 0);
                 return false;
             }
         });
@@ -1361,18 +1362,18 @@ public class MainActivity extends Activity {
                 }
             }
             // 链接关键字屏蔽
-            if(sharedPreferences.getBoolean("switch_filter",false)){
-                String sf = sharedPreferences.getString("filter","");
-                Log.e(Thread.currentThread().getStackTrace()[2] + "", "" + sf);
+            if(sharedPreferences.getBoolean("switch_filter", false)){
+                String sf = sharedPreferences.getString("filter", "");
+                //Log.e(Thread.currentThread().getStackTrace()[2] + "", "" + sf);
                 if(!sf.equals("")) {
                     String js = "javascript:var s='"+sf+"';var sl=s.split(';');var a=document.getElementsByTagName('a');for(var i=0;i<a.length;i++){for(var j=0;j<sl.length;j++){if(a[i].textContent.indexOf(sl[j])!=-1){a[i].textContent='';}}}";
                     view.loadUrl(js);
                 }
             }
             // 链接关键字高亮
-            if(sharedPreferences.getBoolean("switch_highlight",false)){
-                String shl = sharedPreferences.getString("highlight","");
-                Log.e(Thread.currentThread().getStackTrace()[2] + "", "" + shl);
+            if(sharedPreferences.getBoolean("switch_highlight", false)){
+                String shl = sharedPreferences.getString("highlight", "");
+                //Log.e(Thread.currentThread().getStackTrace()[2] + "", "" + shl);
                 if(!shl.equals("")) {
                     String js = "javascript:var s='"+shl+"';var sl=s.split(';');var a=document.getElementsByTagName('a');for(var i=0;i<a.length;i++){for(var j=0;j<sl.length;j++){if(a[i].textContent.indexOf(sl[j])!=-1){a[i].style.color='white';a[i].style.backgroundColor='#DA3434';}}}";
                     view.loadUrl(js);
@@ -1395,7 +1396,7 @@ public class MainActivity extends Activity {
 
         // 接收网站图标(favicon)
         public void onReceivedIcon(WebView view, Bitmap icon) {
-            imageButton_info.setImageBitmap(icon);
+            button_info.setImageBitmap(icon);
         }
 
         // 播放网络视频时全屏会被调用的方法
@@ -1455,7 +1456,7 @@ public class MainActivity extends Activity {
     }
 
     void getDataFromIntent(Intent intent) {
-        Log.e(Thread.currentThread().getStackTrace()[2] + "", "intent(" + intent + ")");
+        //Log.e(Thread.currentThread().getStackTrace()[2] + "", "intent(" + intent + ")");
         if (intent.getAction().equals(Intent.ACTION_VIEW)) {
             urln = intent.getDataString();
             newWindow(urln);

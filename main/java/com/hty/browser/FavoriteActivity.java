@@ -24,6 +24,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -33,6 +34,9 @@ import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.lang.reflect.Field;
 
 public class FavoriteActivity extends Activity {
@@ -42,6 +46,8 @@ public class FavoriteActivity extends Activity {
     InputMethodManager IMM;
     ImageButton imageButton_clear;
     int position = 0;
+    TextView textView_title;
+    Button button_favback;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,6 +55,9 @@ public class FavoriteActivity extends Activity {
         setContentView(R.layout.activity_favorite);
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
         IMM = (InputMethodManager) getApplicationContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+        button_favback = (Button) findViewById(R.id.button_favback);
+        button_favback.setText("<");
+        textView_title = (TextView) findViewById(R.id.textView_title);
         imageButton_clear = (ImageButton) findViewById(R.id.imageButton_clear);
         imageButton_clear.setOnClickListener(new ButtonListener());
         imageButton_clear.setVisibility(View.GONE);
@@ -210,6 +219,8 @@ public class FavoriteActivity extends Activity {
     void search(String s) {
         DBHelper helper = new DBHelper(this);
         Cursor cursor1 = helper.query(s);
+        int count = cursor1.getCount();
+        textView_title.setText("收藏夹" + count);
         String[] from = { "_id", "title", "website", "website" };
         int[] to = { R.id.id, R.id.title, R.id.website, R.id.imageView_favicon };
         adapter = new SimpleCursorAdapter(this, R.layout.favorite_row, cursor1, from, to, 0);
@@ -254,6 +265,55 @@ public class FavoriteActivity extends Activity {
                 imageButton_clear.setVisibility(View.VISIBLE);
             }
             search(s.toString());
+        }
+    }
+
+    public void menuFav(View v) {
+        String[] items = { "导出HTML", "导出CSV" };
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("收藏夹");
+        builder.setIcon(android.R.drawable.btn_star_big_on);
+        builder.setItems(items, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+                switch (which) {
+                    case 0:
+                        String s = "<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no\"/>\n<title>收藏夹</title>\n<style>a { text-decoration:none; }\ntable { table-layout:fixed; width:100%; border-collapse:collapse; }\nth, td { border:1px solid black; padding:5px; overflow:hidden; text-overflow: ellipsis; }\n</style>\n</head>\n<body>\n<h2 align=center>收藏夹" + adapter.getCount() + "</h2>\n<table>\n<tr><th>标题</th><th>网址</th></tr>\n";
+                        for (int i=0; i<adapter.getCount(); i++){
+                            LinearLayout layout = (LinearLayout) listView.getAdapter().getView(i, null, null);
+                            TextView textView_title = (TextView) layout.findViewById(R.id.title);
+                            TextView textView_website = (TextView) layout.findViewById(R.id.website);
+                            s = s + "<tr><td>" + textView_title.getText().toString() + "</td><td><a href=\"" + textView_website.getText().toString() + "\" target=\"_blank\">" + textView_website.getText().toString() + "</a></td></tr>\n";
+                        }
+                        s += "</table>\n</body>\n</html>";
+                        writeFile("webfav.htm", s);
+                        break;
+                    case 1:
+                        s = "";
+                        for (int i=0; i<adapter.getCount(); i++){
+                            LinearLayout layout = (LinearLayout) listView.getAdapter().getView(i, null, null);
+                            TextView textView_title = (TextView) layout.findViewById(R.id.title);
+                            TextView textView_website = (TextView) layout.findViewById(R.id.website);
+                            s = s + textView_title.getText().toString() + "," + textView_website.getText().toString() + "\n";
+                        }
+                        writeFile("webfav.csv", s);
+                        break;
+                }
+            }
+        });
+        builder.create().show();
+    }
+
+    void writeFile(String filename, String s) {
+        File file = new File(MainActivity.dir, filename);
+        try {
+            BufferedWriter bw = new BufferedWriter(new FileWriter(file, false)); //false覆盖
+            bw.write(s);
+            bw.flush();
+            Toast.makeText(FavoriteActivity.this, "写文件 " + MainActivity.dir + File.separator + filename + " 成功", Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Log.e(Thread.currentThread().getStackTrace()[2] + "", e.toString());
         }
     }
 
