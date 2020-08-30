@@ -6,44 +6,6 @@
     android:orientation="vertical"
     tools:context=".FavoriteActivity" >
 
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" >
-
-        <TextView
-            android:id="@+id/textView_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
-            android:text="收藏夹"
-            android:textSize="20sp" />
-
-        <Button
-            android:id="@+id/button_favback"
-            style="@android:style/Widget.DeviceDefault.Button.Small"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentRight="false"
-            android:layout_centerVertical="false"
-            android:alpha="0.3"
-            android:background="@null"
-            android:onClick="favback"
-            android:text="←"
-            android:textSize="30sp" />
-
-        <Button
-            style="@android:style/Widget.DeviceDefault.Button.Small"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentRight="true"
-            android:alpha="0.3"
-            android:background="@null"
-            android:onClick="menuFav"
-            android:text="≡"
-            android:textSize="30sp" />
-
-    </RelativeLayout>
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

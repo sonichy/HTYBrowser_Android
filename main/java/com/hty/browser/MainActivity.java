@@ -266,8 +266,7 @@ public class MainActivity extends Activity {
     // 退出全屏
     private void quitFullScreen() {
         if (customViewCallback != null) {
-            // 隐藏掉
-            customViewCallback.onCustomViewHidden();
+            customViewCallback.onCustomViewHidden();    // 隐藏
         }
         // RelativeLayout1.setVisibility(View.VISIBLE);
         LinearLayout1.setVisibility(View.VISIBLE);
@@ -404,7 +403,8 @@ public class MainActivity extends Activity {
             menu.add(0, 4, 4, "屏蔽图片");
             menu.add(0, 5, 5, "隐藏图片");
         } else if (result.getType() == HitTestResult.SRC_ANCHOR_TYPE) {
-            menu.setHeaderIcon(android.R.drawable.ic_menu_sort_alphabetically);
+            menu.setHeaderIcon(R.drawable.link);
+            menu.add(0, 0, 0, "在新窗口打开链接");
             menu.add(0, 2, 2, "下载");
             menu.add(0, 3, 3, "复制链接");
         }
@@ -414,25 +414,24 @@ public class MainActivity extends Activity {
     public boolean onContextItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case 0:
-                list_webView.get(currentPage).loadUrl(HTRE);
+                newWindow(HTRE);
                 break;
             case 1:
-                ClipboardManager mClipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                ClipboardManager clipboardManager = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
                 ContentValues values = new ContentValues(2);
                 values.put(MediaStore.Images.Media.MIME_TYPE, "Image/jpg");
                 values.put(MediaStore.Images.Media.DATA, HTRE);
                 ContentResolver theContent = getContentResolver();
                 Uri imageUri = theContent.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
-                ClipData theClip = ClipData.newUri(getContentResolver(), "Image", imageUri);
-                mClipboard.setPrimaryClip(theClip);
+                ClipData clipData = ClipData.newUri(getContentResolver(), "Image", imageUri);
+                clipboardManager.setPrimaryClip(clipData);
                 break;
             case 2:
-                //downloadBySystem(HTRE, "", "");
                 dialog_new_download(HTRE, "", "");
                 break;
             case 3:
-                ClipboardManager cm = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
-                cm.setPrimaryClip(ClipData.newPlainText("link", HTRE));
+                clipboardManager = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+                clipboardManager.setPrimaryClip(ClipData.newPlainText("link", HTRE));
                 Toast.makeText(getApplicationContext(), "链接已复制", Toast.LENGTH_SHORT).show();
                 break;
             case 4:
@@ -639,14 +638,15 @@ public class MainActivity extends Activity {
         String[] items = { "新建窗口", "关闭当前窗口", "收藏当前页", "收藏夹", "查找", "分享", "视频独立播放", "视频截图", "视频在播放器中打开", "查看源码", "主页", "全屏", "广告过滤规则", "设置", "检查更新", "关于", "退出", "清除缓存" };
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("菜单");
-        builder.setIcon(android.R.drawable.ic_menu_preferences);
+        //builder.setIcon(android.R.drawable.ic_menu_preferences);
+        builder.setIcon(R.drawable.ic_launcher);
         builder.setItems(items, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 dialog.dismiss();
                 switch (which) {
                     case 0:
-                        newWindow(sharedPreferences.getString("homepage","http://www.baidu.com"));
+                        newWindow(sharedPreferences.getString("homepage", "http://www.baidu.com"));
                         break;
                     case 1:
                         list_webView.remove(currentPage);
@@ -794,7 +794,7 @@ public class MainActivity extends Activity {
                                     builder.setPositiveButton("保存", new DialogInterface.OnClickListener() {
                                         @Override
                                         public void onClick(DialogInterface dialog, int which) {
-                                            String dir = Environment.getExternalStorageDirectory().getPath() + "/Pictures/Screenshots/";
+                                            String dir = Environment.getExternalStorageDirectory().getPath() + "/DCIM/Screenshots/";
                                             File temp = new File(dir);  // 如果文件夹不存在则创建
                                             if (!temp.exists()) {
                                                 temp.mkdir();
@@ -813,7 +813,7 @@ public class MainActivity extends Activity {
                                             bitmap.compress(Bitmap.CompressFormat.JPEG, 100, BOS);
                                             try {
                                                 BOS.flush();
-                                            }catch (IOException e) {
+                                            } catch (IOException e) {
                                                 e.printStackTrace();
                                             }
                                             try {
@@ -852,7 +852,7 @@ public class MainActivity extends Activity {
                                         Uri uri = Uri.parse(value);
                                         intent1.setDataAndType(uri, type);
                                         startActivity(intent1);
-                                    }catch (ActivityNotFoundException e){
+                                    } catch (ActivityNotFoundException e) {
                                         Log.e(Thread.currentThread().getStackTrace()[2] + "", "" + e);
                                         Toast.makeText(getApplicationContext(), "系统默认播放器不能打开视频", Toast.LENGTH_SHORT).show();
                                     }
@@ -884,7 +884,7 @@ public class MainActivity extends Activity {
                         new Thread(CU).start();
                         break;
                     case 15:
-                        list_webView.get(currentPage).loadUrl("file:///android_asset/about.htm");
+                        newWindow("file:///android_asset/about.htm");
                         break;
                     case 16:
                         unregisterReceiver(receiver);
@@ -1185,7 +1185,7 @@ public class MainActivity extends Activity {
         }
     }
 
-    void newWindow(String surl){
+    void newWindow(String surl) {
         WebView webView = new WebView(MainActivity.this);
         settingWebView(webView);
         webView.loadUrl(surl);
@@ -1196,43 +1196,28 @@ public class MainActivity extends Activity {
         button_page.setText(currentPage + 1 + "");
     }
 
-    void settingWebView(WebView webView){
-        // 菜单
-        registerForContextMenu(webView);
-        // 支持获取手势焦点
-        webView.requestFocusFromTouch();
-        // 允许调试
+    void settingWebView(WebView webView) {
+        registerForContextMenu(webView); // 注册菜单
+        webView.requestFocusFromTouch(); // 请求触摸焦点
         if(Build.VERSION.SDK_INT >= 19) {
-            webView.setWebContentsDebuggingEnabled(true);
+            webView.setWebContentsDebuggingEnabled(true);   // 允许调试
         }
         WebSettings webSettings = webView.getSettings();
-        // 开启JS
-        webSettings.setJavaScriptEnabled(true);
-        // 开启JS能打开窗口
-        webSettings.setJavaScriptCanOpenWindowsAutomatically(true);
-        // 开启缓存
-        webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
+        webSettings.setJavaScriptEnabled(true); // 开启JS
+        webSettings.setJavaScriptCanOpenWindowsAutomatically(true);// 允许JS打开窗口
+        webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);// 开启缓存
         // 自适应屏幕
         webSettings.setUseWideViewPort(true);
         webSettings.setLoadWithOverviewMode(true);
-        // 支持缩放
-        webSettings.setSupportZoom(true);
-        // 启用内置缩放控件
-        webSettings.setBuiltInZoomControls(true);
-        // 隐藏缩放控件
-        webSettings.setDisplayZoomControls(false);
-        // 开启访问文件
-        webSettings.setAllowFileAccess(true);
-        // 开启数据库
-        webSettings.setDatabaseEnabled(true);
-        // 开启localStorage
-        webSettings.setDomStorageEnabled(true);
-        // 开启定位
-        webSettings.setGeolocationEnabled(true);
-        // 支持多窗口
-        webSettings.setSupportMultipleWindows(true);
-        // 允许跨域
-        webSettings.setAllowUniversalAccessFromFileURLs(true);
+        webSettings.setSupportZoom(true); // 支持缩放
+        webSettings.setBuiltInZoomControls(true);// 启用内置缩放控件
+        webSettings.setDisplayZoomControls(false); // 隐藏缩放控件
+        webSettings.setAllowFileAccess(true);// 开启文件访问
+        webSettings.setDatabaseEnabled(true); // 开启数据库
+        webSettings.setDomStorageEnabled(true); // 开启localStorage
+        webSettings.setGeolocationEnabled(true); // 开启定位
+        webSettings.setSupportMultipleWindows(true); // 支持多窗口
+        webSettings.setAllowUniversalAccessFromFileURLs(true); // 允许跨域
 
         webView.setWebViewClient(new WebViewClient() {
             @Override

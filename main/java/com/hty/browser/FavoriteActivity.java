@@ -16,7 +16,9 @@ import android.text.TextWatcher;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
+import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnCreateContextMenuListener;
 import android.view.WindowManager;
@@ -24,7 +26,6 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.AdapterView.OnItemClickListener;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -40,14 +41,12 @@ import java.io.FileWriter;
 import java.lang.reflect.Field;
 
 public class FavoriteActivity extends Activity {
-    SimpleCursorAdapter adapter;
-    ListView listView;
     EditText editText;
-    InputMethodManager IMM;
     ImageButton imageButton_clear;
+    InputMethodManager IMM;
+    ListView listView;
+    SimpleCursorAdapter adapter;
     int position = 0;
-    TextView textView_title;
-    Button button_favback;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,11 +54,8 @@ public class FavoriteActivity extends Activity {
         setContentView(R.layout.activity_favorite);
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
         IMM = (InputMethodManager) getApplicationContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-        button_favback = (Button) findViewById(R.id.button_favback);
-        button_favback.setText("<");
-        textView_title = (TextView) findViewById(R.id.textView_title);
         imageButton_clear = (ImageButton) findViewById(R.id.imageButton_clear);
-        imageButton_clear.setOnClickListener(new ButtonListener());
+        imageButton_clear.setOnClickListener(new OnClickListener());
         imageButton_clear.setVisibility(View.GONE);
         editText = (EditText) findViewById(R.id.editText);
         editText.addTextChangedListener(new EditChangedListener());
@@ -87,23 +83,64 @@ public class FavoriteActivity extends Activity {
                 menu.add(0, 3, 3, "分享");
             }
         });
+        listView.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                IMM.hideSoftInputFromWindow(editText.getWindowToken(), 0);
+                return false;
+            }
+        });
         search(editText.getText().toString());
     }
 
-    class ButtonListener implements View.OnClickListener {
-        @Override
-        public void onClick(View v) {
-            switch (v.getId()) {
-                case R.id.imageButton_clear:
-                    editText.setText("");
-                    break;
-            }
+
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        String[] sm = { "导出HTML", "导出CSV" };
+        for (int i=0; i<sm.length; i++) {
+            menu.add(0, i, i, sm[i]);
         }
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        switch (id) {
+            case 0:
+                String s = "<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no\"/>\n<title>收藏夹</title>\n<style>a { text-decoration:none; }\ntable { table-layout:fixed; width:100%; border-collapse:collapse; }\nth, td { border:1px solid black; padding:5px; overflow:hidden; text-overflow: ellipsis; }\n</style>\n</head>\n<body>\n<h2 align=center>收藏夹" + adapter.getCount() + "</h2>\n<table>\n<tr><th>标题</th><th>网址</th></tr>\n";
+                for (int i=0; i<adapter.getCount(); i++){
+                    LinearLayout layout = (LinearLayout) listView.getAdapter().getView(i, null, null);
+                    TextView textView_title = (TextView) layout.findViewById(R.id.title);
+                    TextView textView_website = (TextView) layout.findViewById(R.id.website);
+                    s = s + "<tr><td>" + textView_title.getText().toString() + "</td><td><a href=\"" + textView_website.getText().toString() + "\" target=\"_blank\">" + textView_website.getText().toString() + "</a></td></tr>\n";
+                }
+                s += "</table>\n</body>\n</html>";
+                writeFile("webfav.htm", s);
+                break;
+            case 1:
+                s = "";
+                for (int i=0; i<adapter.getCount(); i++){
+                    LinearLayout layout = (LinearLayout) listView.getAdapter().getView(i, null, null);
+                    TextView textView_title = (TextView) layout.findViewById(R.id.title);
+                    TextView textView_website = (TextView) layout.findViewById(R.id.website);
+                    s = s + textView_title.getText().toString().replace(",", "，") + "," + textView_website.getText().toString() + "\n";
+                }
+                writeFile("webfav.csv", s);
+                break;
+			case android.R.id.home:
+                IMM.hideSoftInputFromWindow(editText.getWindowToken(), 0);
+                finish();
+                break;
+        }
+        return true;
     }
 
     @Override
     public boolean onContextItemSelected(MenuItem item) {
         AdapterContextMenuInfo menuInfo = (AdapterContextMenuInfo) item.getMenuInfo();
+        position = menuInfo.position;
         switch (item.getItemId()) {
             case 0:
                 ClipboardManager cm = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
@@ -112,7 +149,6 @@ public class FavoriteActivity extends Activity {
                 Toast.makeText(getApplicationContext(), "链接已复制", Toast.LENGTH_SHORT).show();
                 break;
             case 1:
-                position = listView.getFirstVisiblePosition();
                 int id = Integer.parseInt(((TextView) menuInfo.targetView.findViewById(R.id.id)).getText().toString());
                 DBHelper helper = new DBHelper(getApplicationContext());
                 helper.del(id);
@@ -189,12 +225,12 @@ public class FavoriteActivity extends Activity {
                             //通过反射获取dialog中的私有属性mShowing
                             field = dialog.getClass().getSuperclass().getDeclaredField("mShowing");
                             field.setAccessible(true);//设置该属性可以访问
-                        } catch (Exception ex) {
+                        } catch (Exception e) {
                         }
                         try {
                             field.set(dialog, true);
                             dialog.dismiss();
-                        } catch (Exception ex) {
+                        } catch (Exception e) {
                         }
                     }
                 });
@@ -211,16 +247,22 @@ public class FavoriteActivity extends Activity {
         return true;
     }
 
-    public void favback(View v) {
-        IMM.hideSoftInputFromWindow(editText.getWindowToken(), 0);
-        finish();
+    class OnClickListener implements View.OnClickListener {
+        @Override
+        public void onClick(View v) {
+            switch (v.getId()) {
+                case R.id.imageButton_clear:
+                    editText.setText("");
+                    break;
+            }
+        }
     }
 
     void search(String s) {
         DBHelper helper = new DBHelper(this);
         Cursor cursor1 = helper.query(s);
         int count = cursor1.getCount();
-        textView_title.setText("收藏夹" + count);
+        setTitle("收藏夹" + count);
         String[] from = { "_id", "title", "website", "website" };
         int[] to = { R.id.id, R.id.title, R.id.website, R.id.imageView_favicon };
         adapter = new SimpleCursorAdapter(this, R.layout.favorite_row, cursor1, from, to, 0);
@@ -268,49 +310,16 @@ public class FavoriteActivity extends Activity {
         }
     }
 
-    public void menuFav(View v) {
-        String[] items = { "导出HTML", "导出CSV" };
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("收藏夹");
-        builder.setIcon(android.R.drawable.btn_star_big_on);
-        builder.setItems(items, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
-                switch (which) {
-                    case 0:
-                        String s = "<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no\"/>\n<title>收藏夹</title>\n<style>a { text-decoration:none; }\ntable { table-layout:fixed; width:100%; border-collapse:collapse; }\nth, td { border:1px solid black; padding:5px; overflow:hidden; text-overflow: ellipsis; }\n</style>\n</head>\n<body>\n<h2 align=center>收藏夹" + adapter.getCount() + "</h2>\n<table>\n<tr><th>标题</th><th>网址</th></tr>\n";
-                        for (int i=0; i<adapter.getCount(); i++){
-                            LinearLayout layout = (LinearLayout) listView.getAdapter().getView(i, null, null);
-                            TextView textView_title = (TextView) layout.findViewById(R.id.title);
-                            TextView textView_website = (TextView) layout.findViewById(R.id.website);
-                            s = s + "<tr><td>" + textView_title.getText().toString() + "</td><td><a href=\"" + textView_website.getText().toString() + "\" target=\"_blank\">" + textView_website.getText().toString() + "</a></td></tr>\n";
-                        }
-                        s += "</table>\n</body>\n</html>";
-                        writeFile("webfav.htm", s);
-                        break;
-                    case 1:
-                        s = "";
-                        for (int i=0; i<adapter.getCount(); i++){
-                            LinearLayout layout = (LinearLayout) listView.getAdapter().getView(i, null, null);
-                            TextView textView_title = (TextView) layout.findViewById(R.id.title);
-                            TextView textView_website = (TextView) layout.findViewById(R.id.website);
-                            s = s + textView_title.getText().toString() + "," + textView_website.getText().toString() + "\n";
-                        }
-                        writeFile("webfav.csv", s);
-                        break;
-                }
-            }
-        });
-        builder.create().show();
-    }
-
     void writeFile(String filename, String s) {
         File file = new File(MainActivity.dir, filename);
         try {
-            BufferedWriter bw = new BufferedWriter(new FileWriter(file, false)); //false覆盖
-            bw.write(s);
-            bw.flush();
+            BufferedWriter BW = new BufferedWriter(new FileWriter(file, false)); //false覆盖
+            if(filename.endsWith(".csv")){
+                BW.write('\ufeff'); // Excel通过文件的BOM头来判断文件编码
+                BW.flush();
+            }
+            BW.write(s);
+            BW.flush();
             Toast.makeText(FavoriteActivity.this, "写文件 " + MainActivity.dir + File.separator + filename + " 成功", Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
             Log.e(Thread.currentThread().getStackTrace()[2] + "", e.toString());

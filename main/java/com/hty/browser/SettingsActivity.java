@@ -26,20 +26,21 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
     // 启动时显示
     protected void onResume() {
         super.onResume();
-        ETP_homepage.setSummary(SP.getString("homepage","http://www.baidu.com"));
-        ETP_filter.setSummary(SP.getString("filter",""));
-        ETP_highlight.setSummary(SP.getString("highlight",""));
+        ETP_homepage.setSummary(SP.getString("homepage", "http://www.baidu.com"));
+        ETP_filter.setSummary(SP.getString("filter", ""));
+        ETP_highlight.setSummary(SP.getString("highlight", ""));
     }
 
     @Override
     // 修改后显示
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         if(key.equals("homepage")){
-            ETP_homepage.setSummary(sharedPreferences.getString(key,""));
+            ETP_homepage.setSummary(sharedPreferences.getString(key, ""));
         }else if(key.equals("filter")){
-            ETP_filter.setSummary(sharedPreferences.getString(key,""));
+            ETP_filter.setSummary(sharedPreferences.getString(key, ""));
         }else if(key.equals("highlight")){
-            ETP_highlight.setSummary(sharedPreferences.getString(key,""));
+            ETP_highlight.setSummary(sharedPreferences.getString(key, ""));
         }
     }
+
 }

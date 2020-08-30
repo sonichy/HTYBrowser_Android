@@ -2,17 +2,16 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           package="com.hty.browser"
           android:versionCode="4"
-          android:versionName="4.11">
+          android:versionName="4.13">
 
     <application
-        android:allowBackup="true"
-        android:hardwareAccelerated="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@android:style/Theme.Holo.Light.NoActionBar">
+        android:theme="@android:style/Theme.Holo.Light">
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name"
+            android:theme="@android:style/Theme.Holo.Light.NoActionBar"
             android:launchMode="singleTask"
             android:configChanges="orientation|keyboardHidden|screenSize">
             <intent-filter>
@@ -28,6 +27,8 @@
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
+                <action android:name="android.intent.action.SEARCH"/>
+                <action android:name="android.intent.action.WEB_SEARCH"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="file"/>
@@ -35,12 +36,16 @@
                 <data android:mimeType="text/plain"/>
             </intent-filter>
         </activity>
-        <activity android:name=".FavoriteActivity"/>
         <activity
-            android:name="com.hty.browser.SettingsActivity"
+            android:name=".FavoriteActivity"
+            android:icon="@android:drawable/btn_star_big_on"
+            android:label="收藏夹"
+            android:parentActivityName=".MainActivity"/>
+        <activity
+            android:name=".SettingsActivity"
             android:label="设置"
-            android:theme="@android:style/Theme.Holo">
-        </activity>
+            android:icon="@android:drawable/ic_menu_preferences"
+            android:parentActivityName=".MainActivity"/>
     </application>
 
     <uses-permission android:name="android.permission.INTERNET"/>
