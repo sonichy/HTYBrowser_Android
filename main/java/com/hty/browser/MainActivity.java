@@ -14,6 +14,7 @@ import java.lang.reflect.Field;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -76,7 +77,6 @@ import android.webkit.ConsoleMessage;
 import android.webkit.DownloadListener;
 import android.webkit.GeolocationPermissions;
 import android.webkit.JsResult;
-import android.webkit.URLUtil;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebChromeClient.CustomViewCallback;
@@ -379,10 +379,9 @@ public class MainActivity extends Activity {
 
     private class MyWebViewDownLoadListener implements DownloadListener {
         @Override
-        public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
-            Log.e(Thread.currentThread().getStackTrace()[2] + ": ", url);
-            //downloadBySystem(url, "", "");
-            dialog_new_download(url, "", "");
+        public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimeType, long contentLength) {
+            Log.e(Thread.currentThread().getStackTrace()[2] + ": ", url + ", " + userAgent + "," + contentDisposition + ", " + mimeType + ", " + contentLength);
+            dialog_download(url, contentDisposition, mimeType, contentLength);
         }
     }
 
@@ -392,10 +391,10 @@ public class MainActivity extends Activity {
         WebView w = (WebView) v;
         HitTestResult result = w.getHitTestResult();
         HTRE = result.getExtra();
-        menu.setHeaderIcon(android.R.drawable.ic_menu_report_image);
+        Log.e(Thread.currentThread().getStackTrace()[2] + ": ", HTRE);
         menu.setHeaderTitle(HTRE);
         if (result.getType() == HitTestResult.IMAGE_TYPE || result.getType() == HitTestResult.SRC_IMAGE_ANCHOR_TYPE) {
-            menu.setHeaderIcon(android.R.drawable.ic_menu_gallery); // Context menu items do not support icons
+            menu.setHeaderIcon(android.R.drawable.ic_menu_gallery);
             menu.add(0, 0, 0, "查看图片");
             menu.add(0, 1, 1, "复制图片");
             menu.add(0, 2, 2, "保存图片").setIcon(android.R.drawable.ic_menu_save); // Context menu items do not support icons
@@ -427,7 +426,10 @@ public class MainActivity extends Activity {
                 clipboardManager.setPrimaryClip(clipData);
                 break;
             case 2:
-                dialog_new_download(HTRE, "", "");
+                String mime = URLConnection.getFileNameMap().getContentTypeFor(HTRE);
+                Log.e(Thread.currentThread().getStackTrace()[2] + ": ", "" + mime);
+                if (mime == null) mime = "";
+                dialog_download(HTRE, "", mime, 0);
                 break;
             case 3:
                 clipboardManager = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
@@ -794,7 +796,7 @@ public class MainActivity extends Activity {
                                     builder.setPositiveButton("保存", new DialogInterface.OnClickListener() {
                                         @Override
                                         public void onClick(DialogInterface dialog, int which) {
-                                            String dir = Environment.getExternalStorageDirectory().getPath() + "/DCIM/Screenshots/";
+                                            String dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).toString() + File.separator + "Screenshots";
                                             File temp = new File(dir);  // 如果文件夹不存在则创建
                                             if (!temp.exists()) {
                                                 temp.mkdir();
@@ -1082,7 +1084,7 @@ public class MainActivity extends Activity {
     }
 
     // 调用系统下载，https://www.jianshu.com/p/6e38e1ef203a
-    private void downloadBySystem(String surl, String contentDisposition, String mimeType) {
+    private void downloadBySystem(String surl, String contentDisposition, String mimeType, String path, String fileName) {
         // 指定下载地址
         DownloadManager.Request request = new DownloadManager.Request(Uri.parse(surl));
         // 允许媒体扫描，根据下载的文件类型被加入相册、音乐等媒体库
@@ -1098,8 +1100,6 @@ public class MainActivity extends Activity {
         // 允许漫游时下载
         request.setAllowedOverRoaming(true);
         // 设置下载文件保存的路径和文件名
-        String fileName  = URLUtil.guessFileName(surl, contentDisposition, mimeType);
-        Log.e(Thread.currentThread().getStackTrace()[2] + "", fileName);
         request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName);
         // 自定义下载路径
         //request.setDestinationUri();
@@ -1107,7 +1107,7 @@ public class MainActivity extends Activity {
         DownloadManager downloadManager = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
         // 添加一个下载任务
         long downloadId = downloadManager.enqueue(request);
-        Log.e(Thread.currentThread().getStackTrace()[2] + "", downloadId+"");
+        Log.e(Thread.currentThread().getStackTrace()[2] + "", downloadId + "");
         if(surl == urlUpdate){
             downloadIdUpdate = downloadId;
         }
@@ -1137,7 +1137,7 @@ public class MainActivity extends Activity {
                 builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        downloadBySystem(urlUpdate, "", "");
+                        downloadBySystem(urlUpdate, "", "", "", "HTYBrowser.apk");
                     }
                 });
                 builder.setNegativeButton("取消", new DialogInterface.OnClickListener() {
@@ -1462,15 +1462,22 @@ public class MainActivity extends Activity {
         }
     }
 
-    void dialog_new_download(final String surl, String contentDisposition, String mimeType){
-        View view = LayoutInflater.from(this).inflate(R.layout.dialog_new_download, null, false);
+    void dialog_download(final String surl, String contentDisposition, String mimeType, long contentLength){
+        View view = LayoutInflater.from(this).inflate(R.layout.dialog_download, null, false);
         final EditText editText_download_url = (EditText) view.findViewById(R.id.editText_download_url);
         editText_download_url.setText(surl);
-        EditText editText_download_filename = (EditText) view.findViewById(R.id.editText_download_filename);
-        editText_download_filename.setText(surl.substring(surl.lastIndexOf("/")+1));
+        final EditText editText_download_filename = (EditText) view.findViewById(R.id.editText_download_filename);
+        String filename = surl.substring(surl.lastIndexOf("/") + 1);
+        Log.e(Thread.currentThread().getStackTrace()[2] + " ", "FileName: " + filename);
+        if (filename.contains("&f=JPEG?")) {//百度网页图片重命名
+            SimpleDateFormat SDF = new SimpleDateFormat("yyyyMMddHHmmss");
+            Date date = new Date();
+            String stime = SDF.format(date);
+            filename = stime + ".jpg";
+        }
+        editText_download_filename.setText(filename);
         editText_download_path = (EditText) view.findViewById(R.id.editText_download_path);
-        //String path = Environment.getExternalStorageDirectory().getPath() + "/download";
-        String path = Environment.DIRECTORY_DOWNLOADS;
+        String path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).toString();
         editText_download_path.setText(path);
         ImageButton imageButton_path = (ImageButton) view.findViewById(R.id.imageButton_path);
 
@@ -1484,10 +1491,12 @@ public class MainActivity extends Activity {
         });
 
         textView_filesize = (TextView) view.findViewById(R.id.textView_filesize);
-        if(!surl.startsWith("data:")) {
+        if (contentLength == 0) {
             GetFileLengthThread getFileLengthThread = new GetFileLengthThread();
             getFileLengthThread.surl = editText_download_url.getText().toString();
             getFileLengthThread.start();
+        } else {
+            textView_filesize.setText(Formatter.formatFileSize(MainActivity.this, contentLength));
         }
 
         final AlertDialog dialog = new AlertDialog.Builder(this)
@@ -1497,10 +1506,10 @@ public class MainActivity extends Activity {
                 .setPositiveButton("确定", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog,	int which) {
-                        //Toast.makeText(getApplicationContext(), "开始下载", Toast.LENGTH_SHORT).show();
                         String url = editText_download_url.getText().toString();
-                        if(!url.equals("")) {
-                            downloadBySystem(url, "", "");
+                        if (!url.equals("")) {
+                            downloadBySystem(url, "", URLConnection.getFileNameMap().getContentTypeFor(url), "", editText_download_filename.getText().toString());
+                            IMM.hideSoftInputFromWindow(editText_download_filename.getWindowToken(), 0);
                         }
                     }
                 })
