@@ -5,6 +5,7 @@ import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.os.Bundle;
 import android.preference.EditTextPreference;
 import android.preference.PreferenceActivity;
+import android.util.Log;
 
 public class SettingsActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener{
 
@@ -34,11 +35,12 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
     @Override
     // 修改后显示
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        if(key.equals("homepage")){
+        Log.e(Thread.currentThread().getStackTrace()[2] + "", key);
+        if (key.equals("homepage")) {
             ETP_homepage.setSummary(sharedPreferences.getString(key, ""));
-        }else if(key.equals("filter")){
+        } else if(key.equals("filter")) {
             ETP_filter.setSummary(sharedPreferences.getString(key, ""));
-        }else if(key.equals("highlight")){
+        } else if(key.equals("highlight")) {
             ETP_highlight.setSummary(sharedPreferences.getString(key, ""));
         }
     }

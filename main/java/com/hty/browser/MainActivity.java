@@ -77,6 +77,7 @@ import android.webkit.ConsoleMessage;
 import android.webkit.DownloadListener;
 import android.webkit.GeolocationPermissions;
 import android.webkit.JsResult;
+import android.webkit.URLUtil;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebChromeClient.CustomViewCallback;
@@ -105,7 +106,7 @@ public class MainActivity extends Activity {
     ImageButton button_back, button_forward, button_menu, button_go, button_search_prev, button_search_next, button_search_close, button_info, button_play;
     // RelativeLayout RelativeLayout1;
     LinearLayout LinearLayout1, LinearLayout2;
-    FrameLayout webViewLayout, video, searchBar;
+    FrameLayout webViewLayout, videoLayout, searchBar;
     InputMethodManager IMM;
     ProgressBar pgb1;
     String urlo = "", HTRE = "", ptitle = "", urln = "";
@@ -139,7 +140,7 @@ public class MainActivity extends Activity {
         LinearLayout2 = (LinearLayout) findViewById(R.id.LinearLayout2);
         // RelativeLayout1 = (RelativeLayout) findViewById(R.id.RelativeLayout1);
         webViewLayout = (FrameLayout) findViewById(R.id.webViewLayout);
-        video = (FrameLayout) findViewById(R.id.video);
+        videoLayout = (FrameLayout) findViewById(R.id.videoLayout);
         searchBar = (FrameLayout) findViewById(R.id.searchBar);
         searchBar.setVisibility(View.GONE);
         pgb1 = (ProgressBar) findViewById(R.id.progressBar1);
@@ -252,7 +253,7 @@ public class MainActivity extends Activity {
     private void setFullScreen() {
         // RelativeLayout1.setVisibility(View.GONE);
         LinearLayout1.setVisibility(View.GONE);
-        video.setVisibility(View.VISIBLE);
+        videoLayout.setVisibility(View.VISIBLE);
         // imageView1.setVisibility(View.VISIBLE);
         // 横屏显示
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
@@ -272,7 +273,7 @@ public class MainActivity extends Activity {
         LinearLayout1.setVisibility(View.VISIBLE);
         LinearLayout2.setVisibility(View.VISIBLE);
         pgb1.setVisibility(View.VISIBLE);
-        video.setVisibility(View.GONE);
+        videoLayout.setVisibility(View.GONE);
         // imageView1.setVisibility(View.GONE);
         // 用户当前的首选方向
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_USER);
@@ -391,7 +392,7 @@ public class MainActivity extends Activity {
         WebView w = (WebView) v;
         HitTestResult result = w.getHitTestResult();
         HTRE = result.getExtra();
-        Log.e(Thread.currentThread().getStackTrace()[2] + ": ", HTRE);
+        Log.e(Thread.currentThread().getStackTrace()[2] + " ", HTRE + "");
         menu.setHeaderTitle(HTRE);
         if (result.getType() == HitTestResult.IMAGE_TYPE || result.getType() == HitTestResult.SRC_IMAGE_ANCHOR_TYPE) {
             menu.setHeaderIcon(android.R.drawable.ic_menu_gallery);
@@ -427,7 +428,7 @@ public class MainActivity extends Activity {
                 break;
             case 2:
                 String mime = URLConnection.getFileNameMap().getContentTypeFor(HTRE);
-                Log.e(Thread.currentThread().getStackTrace()[2] + ": ", "" + mime);
+                Log.e(Thread.currentThread().getStackTrace()[2] + " ", "" + mime);
                 if (mime == null) mime = "";
                 dialog_download(HTRE, "", mime, 0);
                 break;
@@ -613,8 +614,13 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onPause() {
-        //Log.e(Thread.currentThread().getStackTrace()[2] + "", "onPause");
-        pauseVideo();
+        Log.e(Thread.currentThread().getStackTrace()[2] + "", "onPause");
+//        Log.e(Thread.currentThread().getStackTrace()[2] + "", "pauseVideo = " + sharedPreferences.getBoolean("switch_pasueVideoOnPause", true));
+//        if (sharedPreferences.getBoolean("switch_pasueVideoOnPause", true)) {
+//            pauseVideo();
+//        } else {
+//            playVideo();
+//        }
         if (isFullScreen) {
             button_play.setVisibility(View.VISIBLE);
         }
@@ -1078,7 +1084,7 @@ public class MainActivity extends Activity {
         }
     }
 
-    void iframeBlock(){
+    void iframeBlock() {
         String js = "javascript:var iframes=document.getElementsByTagName('iframe');for(i=0;i<iframes.length;i++){iframes[i].style.display='none';}document.getElementById('win-pop-foot').style.display='none';document.getElementById('win-pop-foot1').style.display='none';";
         list_webView.get(currentPage).loadUrl(js);
     }
@@ -1265,7 +1271,7 @@ public class MainActivity extends Activity {
                 super.onReceivedError(view, errorCode, description, failingUrl);
                 Toast.makeText(getApplicationContext(), "ReceivedError:" + errorCode, Toast.LENGTH_SHORT).show();
                 if (isNetworkConnected()) {
-                    switch(errorCode){
+                    switch (errorCode) {
                         case WebViewClient.ERROR_HOST_LOOKUP:   // 找不到主机，跳转百度搜索
                             Log.e(Thread.currentThread().getStackTrace()[2] + "", failingUrl);
                             String url = "http://m.baidu.com/s?word=" + urlo;
@@ -1336,10 +1342,10 @@ public class MainActivity extends Activity {
         public void onProgressChanged(WebView view, int newProgress) {
             super.onProgressChanged(view, newProgress);
             pgb1.setProgress(newProgress);
-            if(sharedPreferences.getBoolean("switch_adBlock",false)){
+            if (sharedPreferences.getBoolean("switch_adBlock", false)) {
                 ADBlock();
             }
-            if(sharedPreferences.getBoolean("switch_iframeBlock",false)) {
+            if (sharedPreferences.getBoolean("switch_iframeBlock", false)) {
                 if (view.getUrl() != null) {
                     if (!view.getUrl().contains("baidu.com")) {
                         iframeBlock();
@@ -1351,21 +1357,21 @@ public class MainActivity extends Activity {
                 String sf = sharedPreferences.getString("filter", "");
                 //Log.e(Thread.currentThread().getStackTrace()[2] + "", "" + sf);
                 if(!sf.equals("")) {
-                    String js = "javascript:var s='"+sf+"';var sl=s.split(';');var a=document.getElementsByTagName('a');for(var i=0;i<a.length;i++){for(var j=0;j<sl.length;j++){if(a[i].textContent.indexOf(sl[j])!=-1){a[i].textContent='';}}}";
+                    String js = "javascript:var s='" + sf + "';var sl=s.split(';');var a=document.getElementsByTagName('a');for(var i=0;i<a.length;i++){for(var j=0;j<sl.length;j++){if(a[i].textContent.indexOf(sl[j])!=-1){a[i].textContent='';}}}";
                     view.loadUrl(js);
                 }
             }
             // 链接关键字高亮
-            if(sharedPreferences.getBoolean("switch_highlight", false)){
+            if (sharedPreferences.getBoolean("switch_highlight", false)) {
                 String shl = sharedPreferences.getString("highlight", "");
                 //Log.e(Thread.currentThread().getStackTrace()[2] + "", "" + shl);
-                if(!shl.equals("")) {
+                if (!shl.equals("")) {
                     String js = "javascript:var s='"+shl+"';var sl=s.split(';');var a=document.getElementsByTagName('a');for(var i=0;i<a.length;i++){for(var j=0;j<sl.length;j++){if(a[i].textContent.indexOf(sl[j])!=-1){a[i].style.color='white';a[i].style.backgroundColor='#DA3434';}}}";
                     view.loadUrl(js);
                 }
             }
             //图片宽度超出父元素适应父元素
-            if(sharedPreferences.getBoolean("switch_shrink",false)) {
+            if (sharedPreferences.getBoolean("switch_shrink", false)) {
                 String js = "javascript:var imgs=document.getElementsByTagName('img');for(var i=0;i<imgs.length;i++){if(imgs[i].parentNode.clientWidth > 0){if(imgs[i].clientWidth>imgs[i].parentNode.clientWidth){imgs[i].width=imgs[i].parentNode.clientWidth;}}}";
                 view.loadUrl(js);
             }
@@ -1391,7 +1397,7 @@ public class MainActivity extends Activity {
             //Toast.makeText(getApplicationContext(), "onShowCustomView", Toast.LENGTH_SHORT).show();
             customViewCallback = callback;
             // 将video放到当前视图中
-            video.addView(view);
+            videoLayout.addView(view);
             // 设置全屏
             setFullScreen();
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -1474,6 +1480,8 @@ public class MainActivity extends Activity {
             Date date = new Date();
             String stime = SDF.format(date);
             filename = stime + ".jpg";
+        } else {
+            filename = URLUtil.guessFileName(surl, null, null);
         }
         editText_download_filename.setText(filename);
         editText_download_path = (EditText) view.findViewById(R.id.editText_download_path);
@@ -1527,7 +1535,6 @@ public class MainActivity extends Activity {
         public void handleMessage(android.os.Message msg) {
             switch (msg.what){
                 case 0:
-                    //textView_filesize.setText(formatFileSize(msg.arg1));
                     textView_filesize.setText(Formatter.formatFileSize(MainActivity.this, msg.arg1));
                     break;
             }

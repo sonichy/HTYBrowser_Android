@@ -60,4 +60,11 @@
 
     </PreferenceCategory>
 
+    <!--
+    <SwitchPreference
+        android:key="switch_pasueVideoOnPause"
+        android:defaultValue="true"
+        android:title="后台暂停播放视频"/>
+     -->
+
 </PreferenceScreen>
