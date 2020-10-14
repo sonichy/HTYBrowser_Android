@@ -397,7 +397,7 @@ public class MainActivity extends Activity {
         if (result.getType() == HitTestResult.IMAGE_TYPE || result.getType() == HitTestResult.SRC_IMAGE_ANCHOR_TYPE) {
             menu.setHeaderIcon(android.R.drawable.ic_menu_gallery);
             menu.add(0, 0, 0, "查看图片");
-            menu.add(0, 1, 1, "复制图片");
+            //menu.add(0, 1, 1, "复制图片");
             menu.add(0, 2, 2, "保存图片").setIcon(android.R.drawable.ic_menu_save); // Context menu items do not support icons
             menu.add(0, 3, 3, "复制链接");
             menu.add(0, 4, 4, "屏蔽图片");
@@ -419,10 +419,9 @@ public class MainActivity extends Activity {
             case 1:
                 ClipboardManager clipboardManager = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
                 ContentValues values = new ContentValues(2);
-                values.put(MediaStore.Images.Media.MIME_TYPE, "Image/jpg");
+                values.put(MediaStore.Images.Media.MIME_TYPE, "image/*");
                 values.put(MediaStore.Images.Media.DATA, HTRE);
-                ContentResolver theContent = getContentResolver();
-                Uri imageUri = theContent.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+                Uri imageUri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
                 ClipData clipData = ClipData.newUri(getContentResolver(), "Image", imageUri);
                 clipboardManager.setPrimaryClip(clipData);
                 break;
