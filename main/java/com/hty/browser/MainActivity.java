@@ -28,7 +28,6 @@ import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.ClipData;
 import android.content.ClipboardManager;
-import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -1204,25 +1203,27 @@ public class MainActivity extends Activity {
     void settingWebView(WebView webView) {
         registerForContextMenu(webView); // 注册菜单
         webView.requestFocusFromTouch(); // 请求触摸焦点
-        if(Build.VERSION.SDK_INT >= 19) {
-            webView.setWebContentsDebuggingEnabled(true);   // 允许调试
-        }
+        webView.setWebContentsDebuggingEnabled(true);   // 允许调试
+
         WebSettings webSettings = webView.getSettings();
         webSettings.setJavaScriptEnabled(true); // 开启JS
-        webSettings.setJavaScriptCanOpenWindowsAutomatically(true);// 允许JS打开窗口
-        webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);// 开启缓存
+        webSettings.setJavaScriptCanOpenWindowsAutomatically(true); // 允许JS打开窗口
+        webSettings.setCacheMode(WebSettings.LOAD_DEFAULT); // 开启缓存
         // 自适应屏幕
         webSettings.setUseWideViewPort(true);
         webSettings.setLoadWithOverviewMode(true);
         webSettings.setSupportZoom(true); // 支持缩放
-        webSettings.setBuiltInZoomControls(true);// 启用内置缩放控件
+        webSettings.setBuiltInZoomControls(true); // 启用内置缩放控件
         webSettings.setDisplayZoomControls(false); // 隐藏缩放控件
-        webSettings.setAllowFileAccess(true);// 开启文件访问
+        webSettings.setAllowFileAccess(true); // 开启文件访问
         webSettings.setDatabaseEnabled(true); // 开启数据库
         webSettings.setDomStorageEnabled(true); // 开启localStorage
         webSettings.setGeolocationEnabled(true); // 开启定位
         webSettings.setSupportMultipleWindows(true); // 支持多窗口
         webSettings.setAllowUniversalAccessFromFileURLs(true); // 允许跨域
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);  // 允许HTTPS、HTTP混合内容
+        }
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
