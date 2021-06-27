@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           package="com.hty.browser"
           android:versionCode="4"
-          android:versionName="4.17">
+          android:versionName="4.19">
 
     <application
         android:icon="@drawable/ic_launcher"
@@ -21,18 +21,15 @@
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
-                <data android:scheme="https"/>
-                <data android:scheme="http"/>
-            </intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW"/>
                 <action android:name="android.intent.action.SEARCH"/>
                 <action android:name="android.intent.action.WEB_SEARCH"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-                <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="file"/>
+                <data android:scheme="content"/>
+                <data android:scheme="https"/>
+                <data android:scheme="http"/>
                 <data android:mimeType="text/html"/>
                 <data android:mimeType="text/plain"/>
+                <data android:host="*"/>
             </intent-filter>
         </activity>
         <activity

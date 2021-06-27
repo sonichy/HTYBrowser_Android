@@ -23,8 +23,8 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
         SP.registerOnSharedPreferenceChangeListener(this);
     }
 
-    @Override
     // 启动时显示
+	@Override    
     protected void onResume() {
         super.onResume();
         ETP_homepage.setSummary(SP.getString("homepage", "http://www.baidu.com"));
@@ -32,8 +32,8 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
         ETP_highlight.setSummary(SP.getString("highlight", ""));
     }
 
-    @Override
     // 修改后显示
+	@Override    
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         Log.e(Thread.currentThread().getStackTrace()[2] + "", key);
         if (key.equals("homepage")) {

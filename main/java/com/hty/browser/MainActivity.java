@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.DownloadManager;
@@ -103,7 +104,6 @@ public class MainActivity extends Activity {
     TextView textView_searchCount, textView_filesize;
     EditText editText_url, editText_search, editText_download_path;
     ImageButton button_back, button_forward, button_menu, button_go, button_search_prev, button_search_next, button_search_close, button_info, button_play;
-    // RelativeLayout RelativeLayout1;
     LinearLayout LinearLayout1, LinearLayout2;
     FrameLayout webViewLayout, videoLayout, searchBar;
     InputMethodManager IMM;
@@ -121,10 +121,21 @@ public class MainActivity extends Activity {
     int currentPage;
     int FILECHOOSER_DOWNLOAD_PATH = 3;
     DownloadCompleteReceiver receiver;
+    private static String[] PERMISSIONS = {
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE };
+    private static int REQUEST_PERMISSION_CODE = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            //Log.e(Thread.currentThread().getStackTrace()[2] + "", "checkSelfPermission: " + checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE));
+            if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED && checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(PERMISSIONS, REQUEST_PERMISSION_CODE);
+            }
+        }
+
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         IMM = (InputMethodManager) getApplicationContext().getSystemService(Context.INPUT_METHOD_SERVICE);
         String path = Environment.getExternalStorageDirectory().getPath() + File.separator + "HTYBrowser";
@@ -132,33 +143,17 @@ public class MainActivity extends Activity {
         if (!dir.exists()) {
             dir.mkdirs();
         }
+
         setContentView(R.layout.activity_main);
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
 
         LinearLayout1 = (LinearLayout) findViewById(R.id.LinearLayout1);
         LinearLayout2 = (LinearLayout) findViewById(R.id.LinearLayout2);
-        // RelativeLayout1 = (RelativeLayout) findViewById(R.id.RelativeLayout1);
         webViewLayout = (FrameLayout) findViewById(R.id.webViewLayout);
         videoLayout = (FrameLayout) findViewById(R.id.videoLayout);
         searchBar = (FrameLayout) findViewById(R.id.searchBar);
         searchBar.setVisibility(View.GONE);
         pgb1 = (ProgressBar) findViewById(R.id.progressBar1);
-        // if (VERSION.SDK_INT > 18) {
-        // getWindow().addFlags(
-        // WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-        // getWindow().addFlags(
-        // WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
-        // LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams)
-        // LinearLayout1
-        // .getLayoutParams();
-        // lp.topMargin = 45;
-        // LinearLayout1.setLayoutParams(lp);
-        // // RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams)
-        // // RelativeLayout1
-        // // .getLayoutParams();
-        // // lp.topMargin = 45;
-        // // RelativeLayout1.setLayoutParams(lp);
-        // }
         button_go = (ImageButton) findViewById(R.id.button_go);
         button_back = (ImageButton) findViewById(R.id.button_back);
         button_forward = (ImageButton) findViewById(R.id.button_forward);
@@ -1177,12 +1172,12 @@ public class MainActivity extends Activity {
                     long downloadId = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1);
                     Log.e(Thread.currentThread().getStackTrace()[2] + "", downloadId + "");
                     DownloadManager downloadManager = (DownloadManager) context.getSystemService(DOWNLOAD_SERVICE);
-                    if(downloadId == downloadIdUpdate){
+                    if (downloadId == downloadIdUpdate) {
                         Uri uri = downloadManager.getUriForDownloadedFile(downloadId);
                         Log.e(Thread.currentThread().getStackTrace()[2] + "", uri.toString());
-                        Intent intentn = new Intent(Intent.ACTION_VIEW);
-                        intentn.setDataAndType(uri, "application/vnd.android.package-archive");
-                        startActivity(intentn);
+                        Intent intent1 = new Intent(Intent.ACTION_VIEW);
+                        intent1.setDataAndType(uri, "application/vnd.android.package-archive");
+                        startActivity(intent1);
                     }
                 }
             }
@@ -1203,7 +1198,9 @@ public class MainActivity extends Activity {
     void settingWebView(WebView webView) {
         registerForContextMenu(webView); // 注册菜单
         webView.requestFocusFromTouch(); // 请求触摸焦点
-        webView.setWebContentsDebuggingEnabled(true);   // 允许调试
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            webView.setWebContentsDebuggingEnabled(true);   // 允许调试
+        }
 
         WebSettings webSettings = webView.getSettings();
         webSettings.setJavaScriptEnabled(true); // 开启JS
@@ -1223,6 +1220,9 @@ public class MainActivity extends Activity {
         webSettings.setAllowUniversalAccessFromFileURLs(true); // 允许跨域
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);  // 允许HTTPS、HTTP混合内容
+        }
+        if (sharedPreferences.getBoolean("switch_pcmode", false)) {
+            webSettings.setUserAgentString("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.134 Safari/537.36");
         }
 
         webView.setWebViewClient(new WebViewClient() {

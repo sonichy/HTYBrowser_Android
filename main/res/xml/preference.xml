@@ -9,6 +9,11 @@
         android:textColor="@android:color/holo_blue_dark"/>
 
     <SwitchPreference
+        android:key="switch_pcmode"
+        android:defaultValue="false"
+        android:title="电脑模式"/>
+
+    <SwitchPreference
         android:key="switch_adBlock"
         android:defaultValue="true"
         android:title="广告过滤"/>
@@ -59,12 +64,5 @@
             android:title="缩小开关"/>
 
     </PreferenceCategory>
-
-    <!--
-    <SwitchPreference
-        android:key="switch_pasueVideoOnPause"
-        android:defaultValue="true"
-        android:title="后台暂停播放视频"/>
-     -->
 
 </PreferenceScreen>
